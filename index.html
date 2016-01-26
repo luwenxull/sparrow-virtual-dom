@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>index</title>
+    <script src="js/sparrow-virtual-dom.js"></script>
+    <script type="text/javascript">
+        var A = sparrow.component({
+            componentName: 'A',
+            render: function (prop) {
+                // return sparrow.create()
+//                return sparrow.node('div', {}, [prop.name, sparrow.node(C, {id: 'A'})]);
+                return sparrow.node('div', null, [prop.name])
+            }
+        });
+
+        var B = sparrow.component({
+            componentName: 'B',
+            render: function () {
+                return sparrow.node(A, {name: 'i am component b'})
+            }
+        });
+
+        var B2 = sparrow.component({
+            componentName: 'B2',
+            render: function () {
+                return sparrow.node(A, {name: 'i am component b2'})
+            }
+        });
+
+        var C = sparrow.component({
+            componentName: 'C',
+            render: function (prop) {
+                return sparrow.node('p', {id: 'C'}, ['good', sparrow.node(D, prop)])
+            }
+        });
+
+        var D = sparrow.component({
+            componentName: 'D',
+            render: function (prop) {
+                return sparrow.node('p', {id: 'D'}, [prop.name || prop.id])
+            }
+        });
+
+
+        var DF = sparrow.component({
+            componentName: 'DF',
+            render: function () {
+//                return sparrow.node('div', null, [sparrow.node(D, {id: 'd'})])
+                return sparrow.node('section', null,
+                        [sparrow.node('div', {id: 'd'}, [
+                            sparrow.node(C, {name: 'i am component c'}), sparrow.node('span', null, ['come on'])
+                        ])]
+                )
+            }
+        });
+
+        var DF2 = sparrow.component({
+            componentName: 'DF2',
+            render: function () {
+//                return sparrow.node('div', null, [sparrow.node(D, {id: 'd2'}), sparrow.node(D, {id: 'd2'})])
+                return sparrow.node('section', null, [sparrow.node('div', {id: 'd'}, [
+                    sparrow.node(D, {name: 'df3'}), sparrow.node(D, {name: 'df4'})
+                ])])
+            }
+        });
+
+        var DF3 = sparrow.component({
+            componentName: 'DF3',
+            render: function () {
+//                return sparrow.node('div', null, [sparrow.node('p', null, ['df3'])])
+                return sparrow.node('section', null, [sparrow.node('div', {id: 'd'}, [
+                    sparrow.node(D, {name: 'df1'}), sparrow.node(D, {name: 'df2'})
+                ])])
+            }
+        });
+        /*var b = B.paint();
+         var b2 = B2.paint();*/
+        /*console.log(b,b2);*/
+
+        // var a=A.render();
+        // b.tree();
+
+        var df = DF.paint(), df2 = DF2.paint(), df3 = DF3.paint();
+        console.log(df.tree(), df2.tree(), df3.tree());
+        console.log(sparrow.diff(df, df3))
+    </script>
+</head>
+<body>
+</body>
+</html>

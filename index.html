@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>index</title>
+    <script src="js/underscore.js"></script>
     <script src="js/sparrow-virtual-dom.js"></script>
-    <script type="text/javascript">
+    <!--<script type="text/javascript">
         var A = sparrow.component({
             componentName: 'A',
-            render: function (prop) {
+            render: function (prop,state) {
                 // return sparrow.create()
 //                return sparrow.node('div', {}, [prop.name, sparrow.node(C, {id: 'A'})]);
                 return sparrow.node('div', null, [prop.name])
@@ -37,6 +38,9 @@
 
         var D = sparrow.component({
             componentName: 'D',
+            defaultProp:function(){
+              return {name:'test of default prop'}
+            },
             render: function (prop) {
                 return sparrow.node('p', {id: 'D'}, [prop.name || prop.id])
             }
@@ -45,13 +49,11 @@
 
         var DF = sparrow.component({
             componentName: 'DF',
-            render: function () {
+            render: function (prop,state) {
 //                return sparrow.node('div', null, [sparrow.node(D, {id: 'd'})])
-                return sparrow.node('section', null,
-                        [sparrow.node('div', {id: 'd'}, [
-                            sparrow.node(C, {name: 'i am component c'}), sparrow.node('span', null, ['come on'])
-                        ])]
-                )
+                return sparrow.node('div',{id:'df-div'},[
+                        sparrow.node(A,{name:state.name})
+                ])
             }
         });
 
@@ -81,11 +83,72 @@
         // var a=A.render();
         // b.tree();
 
-        var df = DF.paint(), df2 = DF2.paint(), df3 = DF3.paint();
-        console.log(df.tree(), df2.tree(), df3.tree());
-        console.log(sparrow.diff(df, df3))
+        var df = DF.setState({name:undefined}).paint(), df2 = DF2.paint(), df3 = DF3.paint();
+        console.log(df.tree());
+//        console.log(df.tree(), df2.tree(), df3.tree());
+//        console.log(sparrow.diff(df, df3));
+
+//        console.log(sparrow.diff(DF.setState({currentState:'init'}).paint(),df));
+        var P=sparrow.component({
+            componentName:'P',
+            defaultProp:function(){
+              return {name:'default prop'}
+            },
+            render:function(prop){
+                return sparrow.node('p',{id:prop.name},[prop.name])
+            }
+        });
+
+        var P2=sparrow.component({
+            componentName:'P2',
+            render:function(){
+                return sparrow.node('p',{name:'aer you ok'},['nice ?','good'])
+            }
+        });
+
+        /*console.log(P2.paint(), P.paint());
+        console.log(P2.paint().tree(), P.paint().tree());
+        console.log(sparrow.diff(P2.paint(), P.paint()))*/
+    </script>-->
+    <script>
+        var Container=sparrow.component({
+            componentName:'Container',
+            render:function(p,s){
+                return sparrow.node('div',null,[
+                    sparrow.node('input',{value:'nothing'}),
+                    sparrow.node(ToDoList,{})
+                ])
+            }
+        });
+
+        var ToDoList=sparrow.component({
+            componentName:'ToDoList',
+            render:function(p,s){
+//                var items=[{name:'eat',date:'night'},{name:'read',date:'all day'}];
+                var Items= s.items.map(function(item){
+                    return sparrow.node(ToDoItem,{item:item})
+                });
+                return sparrow.node('ul',null,Items)
+            }
+        });
+
+        var ToDoItem=sparrow.component({
+            componentName:'ToDoItem',
+            render:function(prop){
+                return sparrow.node('li',null,[prop.item.name])
+            }
+        });
+
+        ToDoList.setState({items:[{name:'eat',date:'night'},{name:'read',date:'all day'}]});
+        var container=Container.paint();
+        var containerTree=container.tree();
+
+        ToDoList.setState({items:[{name:'swim',date:'night'},{name:'fight',date:'all day'}]});
+        var container2=Container.paint();
+        console.log(sparrow.diff(container2,container));
     </script>
 </head>
 <body>
+<h3>to-do-list</h3>
 </body>
 </html>

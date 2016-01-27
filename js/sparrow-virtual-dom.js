@@ -23,8 +23,11 @@
         this.version = '.0';
     }
 
+    var $components = {};
     _Sparrow.prototype.component = function (component) {
-        return new Component(component)
+        var c = new Component(component);
+        $components[c.componentName] = c;
+        return c;
     };
 
     _Sparrow.prototype.node = function (type, prop, children) {
@@ -33,9 +36,9 @@
 
     var DIFF = {
         CREATE: 'CREATE',
-        CREATE_ALL:'CREATE_ALL',
+        CREATE_ALL: 'CREATE_ALL',
         DELETE: 'DELETE',
-        DELETE_ALL:'DELETE_ALL',
+        DELETE_ALL: 'DELETE_ALL',
         UPDATE: 'UPDATE',
         UPDATE_PROP: 'UPDATE_PROP',
         REPLACE: 'REPLACE'
@@ -55,6 +58,14 @@
         return typeof str === 'string'
     }
 
+    function isNumber(num) {
+        return typeof num === 'number'
+    }
+
+    function isSimple(data){
+        return typeof data === 'string'||typeof data==='number'
+    }
+
     function Diff(type, nodeLevel, nodeIndex, newVal) {
         this.type = type;
         this.nodeLevel = nodeLevel;
@@ -69,29 +80,49 @@
         }
     }
 
+    function traceChild(ele, trace) {
+        var traceArr = trace.split('-').slice(1);
+        var child = parent = ele, index = 0;
+        while (index < traceArr.length) {
+            parent = child;
+            child = child.childNodes[traceArr[index]];
+            index++;
+        }
+        return {
+            parent: parent,
+            child: child
+        }
+    }
+
+    function toDOMNode(node) {
+        if (isString(node) || isNumber(node)) {
+            return document.createTextNode(node)
+        }
+    }
+
     /*diff*/
-    _Sparrow.prototype.diff = function (newNode, oldNode, nodeLevel, nodeIndex) {
+    _Sparrow.prototype.diff = function (newNode, oldNode, nodeLevel, nodeIndex,suffix) {
         var changes = [];
         nodeLevel === undefined && (nodeLevel = 0);
         nodeIndex === undefined && (nodeIndex = 0);
 
         if (!newNode && oldNode) {
-            changes.push(new Diff(DIFF.DELETE_ALL, nodeLevel, nodeIndex, null));
+            changes.push(new Diff(suffix?DIFF.DELETE_ALL:DIFF.DELETE, nodeLevel, nodeIndex, null));
             return changes;
         }
         if (!oldNode && newNode) {
-            changes.push(new Diff(DIFF.CREATE_ALL, nodeLevel, nodeIndex, newNode));
+            changes.push(new Diff(suffix?DIFF.CREATE_ALL:DIFF.CREATE, nodeLevel, nodeIndex, newNode));
             return changes;
         }
         if (!oldNode && !newNode) return [];
 
         var nt = newNode.type, ot = oldNode.type;
         /*diff string*/
-        if (isString(newNode)) {
-            if (isString(oldNode) && newNode !== oldNode) {
+        if (isSimple(newNode)) {
+            if (isSimple(oldNode) && newNode !== oldNode) {
                 changes.push(new Diff(DIFF.UPDATE, nodeLevel, nodeIndex, newNode));
             }
-            if (!isString(oldNode)) {
+            if (!isSimple(oldNode)) {
                 changes.push(new Diff(DIFF.REPLACE, nodeLevel, nodeIndex, newNode))
             }
             return changes;
@@ -113,8 +144,8 @@
                     nodeLevel++;
                     /*both no children*/
                     if (!oc || !nc) {
-                        changes = changes.concat(this.diff(nc, oc, nodeLevel, nodeIndex));
-                    }else{
+                        changes = changes.concat(this.diff(nc, oc, nodeLevel, nodeIndex,true));
+                    } else {
                         for (var i = 0; i < oc.length; i++) {
                             var nChild = nc[i], oChild = oc[i];
                             /*                        if (!nChild) {
@@ -131,6 +162,58 @@
             }
         }
         return changes;
+    };
+
+    _Sparrow.prototype.mount = function (component, dom) {
+        var componentDOM = component.tree();
+        dom.appendChild(componentDOM);
+    };
+
+    _Sparrow.prototype.nodeSync = function (mounted, diff) {
+        console.log(mounted, diff);
+        for (var i = 0; i < diff.length; i++) {
+            var diffType = diff[i].type,
+                trace = diff[i].nodeIndex;
+            var newValues = diff[i].newVal;
+            var r = traceChild(mounted, trace);
+            var child = r.child, parent = r.parent;
+            switch (diffType) {
+                case DIFF.CREATE :
+                {
+                    for (var ci = 0; ci < newValues.length; ci++) {
+                        parent.appendChild(toDOMNode(newValues[ci]))
+                    }
+                    break;
+                }
+                case DIFF.CREATE_ALL:
+                {
+                    break;
+                }
+                case DIFF.DELETE:
+                {
+                    parent.removeChild(child);
+                    break;
+                }
+                case DIFF.DELETE_ALL:
+                {
+                    break;
+                }
+                case DIFF.UPDATE:
+                {
+                    child.data = diff[i].newVal;
+                    break;
+                }
+                case DIFF.UPDATE_PROP:
+                {
+                    break;
+                }
+                case DIFF.REPLACE:
+                {
+                    parent.replaceChild(toDOMNode(newValues),child);
+                    break;
+                }
+            }
+        }
     };
 
     function Component(desc) {
@@ -166,16 +249,26 @@
     }
 
     Component.prototype.paint = function (prop) {
-        var spn = this._component.render(extend({}, this.defaultProp || {}, prop || {}), this.state || {});
+        var spn = this._component.render(extend({}, this.defaultProp || {}, prop || {}), this.state);
+        spn.component = this;
         childrenPaint(spn);
         return spn;
 
     };
 
     Component.prototype.setState = function (state) {
+        var eles = document.querySelectorAll('[data-component=' + this.componentName + ']');
+
+        var oldNode = this.paint(),
+            newNode;
         if (!this.state) this.state = {};
         extend(this.state, state);
-        return this;
+        newNode = this.paint();
+        //console.log(newNode);
+
+        var diff = sparrow.diff(newNode, oldNode);
+        sparrow.nodeSync(eles[0], diff)
+
     };
     function Sparrow_Node(type, prop, children) {
         this.type = type;
@@ -190,17 +283,17 @@
             ele = this._paintbrush.tree();
         } else {
             ele = document.createElement(nodeType);
-            //ele.setAttribute()
+            this.component && ele.setAttribute('data-component', this.component.componentName);
             if (this.prop) {
                 var props = Object.keys(this.prop);
                 props.forEach(function (prop) {
                     ele.setAttribute(prop, this.prop[prop])
                 }.bind(this))
             }
-            if(children){
+            if (children) {
                 for (var i = 0; i < children.length; i++) {
                     var child = children[i];
-                    if (typeof child == 'string') {
+                    if (isString(child) || isNumber(child)) {
                         ele.appendChild(document.createTextNode(child));
                     } else {
                         try {

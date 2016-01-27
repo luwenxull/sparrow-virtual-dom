@@ -117,9 +117,9 @@
             componentName:'A',
             render:function(p,s){
                 if(s){
-                    return sparrow.node('div',null,[s.age])
+                    return sparrow.node('div',null,[s.age, node('p',{id:'op'}, s.name)])
                 }else{
-                    return sparrow.node('div',null,[11,'maybe you should guess'])
+                    return sparrow.node('div',null,['maybe you should guess'])
                 }
 
             }
@@ -133,12 +133,6 @@
         });
 
         var a= A.paint();
-        /*console.log(a.tree(), b.tree());
-        console.log(sparrow.diff(b,a));
-        console.log('>>>>>>>>>>>>>>>>>>>>>>>');*/
-
-
-//        sparrow.nodeSync()
     </script>
     <script>
         var Container=sparrow.component({
@@ -154,10 +148,14 @@
         var ToDoList=sparrow.component({
             componentName:'ToDoList',
             render:function(p,s){
-//                var items=[{name:'eat',date:'night'},{name:'read',date:'all day'}];
-                var Items= s.items.map(function(item){
-                    return sparrow.node(ToDoItem,{item:item})
-                });
+                var Items;
+                if(s){
+                    Items= s.items.map(function(item){
+                        return sparrow.node(ToDoItem,{item:item})
+                    });
+                }else{
+                    Items=[]
+                }
                 return sparrow.node('ul',null,Items)
             }
         });
@@ -165,18 +163,9 @@
         var ToDoItem=sparrow.component({
             componentName:'ToDoItem',
             render:function(p,s){
-                return sparrow.node('li',null,[s.name || p.item.name])
+                return sparrow.node('li',null,p.item.name)
             }
         });
-
-        /*ToDoList.setState({items:[{name:'eat',date:'night'},{name:'read',date:'all day'}]});
-        var container=Container.paint();
-        var containerTree=container.tree();
-
-        ToDoList.setState({items:[{name:'swim',date:'night'},{name:'fight',date:'all day'}]});
-        var container2=Container.paint();
-        console.log(sparrow.diff(container2,container));*/
-
 
     </script>
 </head>
@@ -186,18 +175,12 @@
 <button onclick="update()">update</button>
 </body>
 <script>
-    /*ToDoList.setState({items:[{name:'eat',date:'night'},{name:'read',date:'all day'}]});
-    sparrow.mount(Container,document.getElementById('c'));
-//    ToDoList.setState({items:[{name:'swim',date:'night'},{name:'fight',date:'all day'}]});
-    ToDoItem.setState({name:'to do items'})*/
-
     function update(){
-        A.setState({name:'nice',age:24})
+        ToDoList.setState({items:[{name:'swim',date:'night'},{name:'fight',date:'morning'}]});
     }
+    var container=Container.paint();
     var c=document.getElementById('c');
-//    var diff=sparrow.diff(b,a);
-//    console.log(b.tree());
-    sparrow.mount(a,c);
-//    sparrow.nodeSync(c.childNodes[0],diff)
+    sparrow.mount(container,c);
+
 </script>
 </html>

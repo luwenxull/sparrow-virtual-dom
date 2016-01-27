@@ -24,11 +24,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="index.html" pinned="false" current-in-tab="false">
+      <file leaf-file-name="index.html" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-24.0">
-              <caret line="194" column="40" selection-start-line="194" selection-start-column="40" selection-end-line="194" selection-end-column="40" />
+            <state vertical-scroll-proportion="0.7643885">
+              <caret line="165" column="57" selection-start-line="165" selection-start-column="57" selection-end-line="165" selection-end-column="57" />
               <folding>
                 <element signature="e#195#3824#0" expanded="false" />
               </folding>
@@ -36,14 +36,12 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="sparrow-virtual-dom.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="sparrow-virtual-dom.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/js/sparrow-virtual-dom.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.52355075">
-              <caret line="113" column="68" selection-start-line="113" selection-start-column="68" selection-end-line="113" selection-end-column="68" />
-              <folding>
-                <element signature="e#8813#10069#0" expanded="false" />
-              </folding>
+            <state vertical-scroll-proportion="-11.6">
+              <caret line="306" column="51" selection-start-line="306" selection-start-column="51" selection-end-line="306" selection-end-column="51" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -67,8 +65,8 @@
         <option value="$USER_HOME$/Desktop/webapp/WEB-INF/pages/shareEvent/viewPoint.ftl" />
         <option value="$USER_HOME$/Desktop/huodong/views/viewPoint.html" />
         <option value="$USER_HOME$/Desktop/huodong/css/viewPoint.css" />
-        <option value="$PROJECT_DIR$/index.html" />
         <option value="$PROJECT_DIR$/js/sparrow-virtual-dom.js" />
+        <option value="$PROJECT_DIR$/index.html" />
       </list>
     </option>
   </component>
@@ -287,9 +285,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="35" column="32" selection-start-line="35" selection-start-column="32" selection-end-line="35" selection-end-column="32" />
-          <folding>
-            <element signature="e#8813#10069#0" expanded="false" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -307,9 +303,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#8813#10069#0" expanded="false" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -327,9 +321,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="189" column="35" selection-start-line="189" selection-start-column="35" selection-end-line="189" selection-end-column="35" />
-          <folding>
-            <element signature="e#8813#10069#0" expanded="false" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -420,22 +412,20 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/index.html">
+    <entry file="file://$PROJECT_DIR$/js/sparrow-virtual-dom.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-24.0">
-          <caret line="194" column="40" selection-start-line="194" selection-start-column="40" selection-end-line="194" selection-end-column="40" />
-          <folding>
-            <element signature="e#195#3824#0" expanded="false" />
-          </folding>
+        <state vertical-scroll-proportion="-11.6">
+          <caret line="306" column="51" selection-start-line="306" selection-start-column="51" selection-end-line="306" selection-end-column="51" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/js/sparrow-virtual-dom.js">
+    <entry file="file://$PROJECT_DIR$/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.52355075">
-          <caret line="113" column="68" selection-start-line="113" selection-start-column="68" selection-end-line="113" selection-end-column="68" />
+        <state vertical-scroll-proportion="0.7643885">
+          <caret line="165" column="57" selection-start-line="165" selection-start-column="57" selection-end-line="165" selection-end-column="57" />
           <folding>
-            <element signature="e#8813#10069#0" expanded="false" />
+            <element signature="e#195#3824#0" expanded="false" />
           </folding>
         </state>
       </provider>

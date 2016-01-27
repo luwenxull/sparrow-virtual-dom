@@ -62,8 +62,12 @@
         return typeof num === 'number'
     }
 
-    function isSimple(data){
-        return typeof data === 'string'||typeof data==='number'
+    function isSimple(data) {
+        return typeof data === 'string' || typeof data === 'number'
+    }
+
+    function isArray(arr) {
+        return arr instanceof Array
     }
 
     function Diff(type, nodeLevel, nodeIndex, newVal) {
@@ -97,21 +101,23 @@
     function toDOMNode(node) {
         if (isString(node) || isNumber(node)) {
             return document.createTextNode(node)
+        }else{
+            return node.tree();
         }
     }
 
     /*diff*/
-    _Sparrow.prototype.diff = function (newNode, oldNode, nodeLevel, nodeIndex,suffix) {
+    _Sparrow.prototype.diff = function (newNode, oldNode, nodeLevel, nodeIndex, suffix) {
         var changes = [];
         nodeLevel === undefined && (nodeLevel = 0);
         nodeIndex === undefined && (nodeIndex = 0);
 
         if (!newNode && oldNode) {
-            changes.push(new Diff(suffix?DIFF.DELETE_ALL:DIFF.DELETE, nodeLevel, nodeIndex, null));
+            changes.push(new Diff(suffix ? DIFF.DELETE_ALL : DIFF.DELETE, nodeLevel, nodeIndex, null));
             return changes;
         }
         if (!oldNode && newNode) {
-            changes.push(new Diff(suffix?DIFF.CREATE_ALL:DIFF.CREATE, nodeLevel, nodeIndex, newNode));
+            changes.push(new Diff(suffix ? DIFF.CREATE_ALL : DIFF.CREATE, nodeLevel, nodeIndex, newNode));
             return changes;
         }
         if (!oldNode && !newNode) return [];
@@ -144,7 +150,7 @@
                     nodeLevel++;
                     /*both no children*/
                     if (!oc || !nc) {
-                        changes = changes.concat(this.diff(nc, oc, nodeLevel, nodeIndex,true));
+                        changes = changes.concat(this.diff(nc, oc, nodeLevel, nodeIndex, true));
                     } else {
                         for (var i = 0; i < oc.length; i++) {
                             var nChild = nc[i], oChild = oc[i];
@@ -209,7 +215,7 @@
                 }
                 case DIFF.REPLACE:
                 {
-                    parent.replaceChild(toDOMNode(newValues),child);
+                    parent.replaceChild(toDOMNode(newValues), child);
                     break;
                 }
             }
@@ -273,6 +279,7 @@
     function Sparrow_Node(type, prop, children) {
         this.type = type;
         this.prop = prop;
+        if (!isArray(children)) children = [children];
         this.children = children;
     }
 
@@ -293,16 +300,11 @@
             if (children) {
                 for (var i = 0; i < children.length; i++) {
                     var child = children[i];
-                    if (isString(child) || isNumber(child)) {
+                    if (isSimple(child)) {
                         ele.appendChild(document.createTextNode(child));
-                    } else {
-                        try {
+                    } else if(child){
                             var r = child.tree();
-                        } catch (err) {
-                            console.error(err.name + ':', err.message)
-                        } finally {
                             r && ele.appendChild(r)
-                        }
                     }
                 }
             }

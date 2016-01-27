@@ -111,6 +111,27 @@
         console.log(sparrow.diff(P2.paint(), P.paint()))*/
     </script>-->
     <script>
+        //test
+        var A=sparrow.component({
+            componentName:'A',
+            render:function(p,s){
+                return sparrow.node('div',null,['NICE'])
+            }
+        });
+
+        var B=sparrow.component({
+            componentName:'B',
+            render:function(p,s){
+                return sparrow.node('div',null,['hello','haha'])
+            }
+        });
+
+        var a= A.paint(),b= B.paint();
+        console.log(a.tree(), b.tree());
+        console.log(sparrow.diff(b,a));
+        console.log('>>>>>>>>>>>>>>>>>>>>>>>')
+    </script>
+    <script>
         var Container=sparrow.component({
             componentName:'Container',
             render:function(p,s){

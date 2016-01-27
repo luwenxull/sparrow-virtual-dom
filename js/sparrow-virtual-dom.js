@@ -33,7 +33,9 @@
 
     var DIFF = {
         CREATE: 'CREATE',
+        CREATE_ALL:'CREATE_ALL',
         DELETE: 'DELETE',
+        DELETE_ALL:'DELETE_ALL',
         UPDATE: 'UPDATE',
         UPDATE_PROP: 'UPDATE_PROP',
         REPLACE: 'REPLACE'
@@ -72,11 +74,18 @@
         var changes = [];
         nodeLevel === undefined && (nodeLevel = 0);
         nodeIndex === undefined && (nodeIndex = 0);
-        var nt = newNode.type, ot = oldNode.type;
 
-        if(!newNode){
-            return new Diff(DIFF.DELETE, nodeLevel, nodeIndex, null);
+        if (!newNode && oldNode) {
+            changes.push(new Diff(DIFF.DELETE_ALL, nodeLevel, nodeIndex, null));
+            return changes;
         }
+        if (!oldNode && newNode) {
+            changes.push(new Diff(DIFF.CREATE_ALL, nodeLevel, nodeIndex, newNode));
+            return changes;
+        }
+        if (!oldNode && !newNode) return [];
+
+        var nt = newNode.type, ot = oldNode.type;
         /*diff string*/
         if (isString(newNode)) {
             if (isString(oldNode) && newNode !== oldNode) {
@@ -102,7 +111,10 @@
                     diffProp(newNode, oldNode, nodeLevel, nodeIndex, changes);
                     var nc = newNode.children, oc = oldNode.children;
                     nodeLevel++;
-                    if(oc){
+                    /*both no children*/
+                    if (!oc || !nc) {
+                        changes = changes.concat(this.diff(nc, oc, nodeLevel, nodeIndex));
+                    }else{
                         for (var i = 0; i < oc.length; i++) {
                             var nChild = nc[i], oChild = oc[i];
                             /*                        if (!nChild) {
@@ -114,10 +126,7 @@
                         if (nc.length > oc.length) {
                             changes.push(new Diff(DIFF.CREATE, nodeLevel, nodeIndex + '-' + oc.length, nc.slice(oc.length)))
                         }
-                    }else{
-
                     }
-
                 }
             }
         }
@@ -188,17 +197,19 @@
                     ele.setAttribute(prop, this.prop[prop])
                 }.bind(this))
             }
-            for (var i = 0; i < children.length; i++) {
-                var child = children[i];
-                if (typeof child == 'string') {
-                    ele.appendChild(document.createTextNode(child));
-                } else {
-                    try {
-                        var r=child.tree();
-                    } catch (err) {
-                        console.error(err.name+':',err.message)
-                    } finally {
-                        r && ele.appendChild(r)
+            if(children){
+                for (var i = 0; i < children.length; i++) {
+                    var child = children[i];
+                    if (typeof child == 'string') {
+                        ele.appendChild(document.createTextNode(child));
+                    } else {
+                        try {
+                            var r = child.tree();
+                        } catch (err) {
+                            console.error(err.name + ':', err.message)
+                        } finally {
+                            r && ele.appendChild(r)
+                        }
                     }
                 }
             }

@@ -19,6 +19,12 @@
         return obj;
     }
 
+    function each(items, iterator) {
+        for (var i = 0; i < items.length; i++) {
+            iterator(items[i], i)
+        }
+    }
+
     function _Sparrow() {
         this.version = '.0';
     }
@@ -44,11 +50,6 @@
         REPLACE: 'REPLACE'
     };
 
-    /*function (newNode, oldNode, nodeLevel, changeCollection){
-     if (newNode.type instanceof Component && oldNode.type instanceof Component) {
-     this.diff(newNode._paintbrush, oldNode._paintbrush, nodeLevel,changeCollection)
-     }
-     }*/
 
     function isComponent(node) {
         return node instanceof Component
@@ -101,7 +102,7 @@
     function toDOMNode(node) {
         if (isString(node) || isNumber(node)) {
             return document.createTextNode(node)
-        }else{
+        } else {
             return node.tree();
         }
     }
@@ -117,7 +118,7 @@
             return changes;
         }
         if (!oldNode && newNode) {
-            changes.push(new Diff(suffix ? DIFF.CREATE_ALL : DIFF.CREATE, nodeLevel, nodeIndex, newNode));
+            changes.push(new Diff(suffix ? DIFF.CREATE_ALL : DIFF.CREATE, nodeLevel, nodeIndex, [newNode]));
             return changes;
         }
         if (!oldNode && !newNode) return [];
@@ -224,7 +225,9 @@
 
     function Component(desc) {
         this._component = desc;
-        desc.defaultProp && (this.defaultProp = desc.defaultProp());
+        this.defaultProp = desc.defaultProp;
+        this.state = desc.initialState;
+        this.refs=Object.create(null);
         try {
             if (!desc.componentName) {
                 throw 'you must give me a componentName';
@@ -238,9 +241,6 @@
     }
 
     function childrenPaint(spn) {
-        if (spn === undefined) {
-            return;
-        }
         var component = spn.type;
 
         if (component instanceof Component) {
@@ -249,15 +249,21 @@
         }
         if (typeof component === "string" && spn.children) {
             for (var i = 0; i < spn.children.length; i++) {
-                childrenPaint(spn.children[i]);
+                var spn_c = spn.children[i];
+                if (spn_c) {
+                    spn_c.$componentOrigin = spn.$componentOrigin;
+                    spn_c.$notTrace=true;
+                    childrenPaint(spn_c);
+                }
             }
         }
     }
 
     Component.prototype.paint = function (prop) {
         var spn = this._component.render(extend({}, this.defaultProp || {}, prop || {}), this.state);
-        spn.component = this;
+        spn.$componentOrigin = this.componentName;
         childrenPaint(spn);
+        this._cacheNode = spn;
         return spn;
 
     };
@@ -265,7 +271,7 @@
     Component.prototype.setState = function (state) {
         var eles = document.querySelectorAll('[data-component=' + this.componentName + ']');
 
-        var oldNode = this.paint(),
+        var oldNode = this._cacheNode,
             newNode;
         if (!this.state) this.state = {};
         extend(this.state, state);
@@ -273,14 +279,42 @@
         //console.log(newNode);
 
         var diff = sparrow.diff(newNode, oldNode);
-        sparrow.nodeSync(eles[0], diff)
-
+        //!!
+        each(eles, function (ele, i) {
+            sparrow.nodeSync(ele, diff)
+        });
     };
     function Sparrow_Node(type, prop, children) {
         this.type = type;
         this.prop = prop;
         if (!isArray(children)) children = [children];
         this.children = children;
+    }
+
+    var eventReg = /^on\w+/;
+
+    function resolveProp(spn,prop, ele) {
+        var props = Object.keys(prop);
+        props.forEach(function (name) {
+            switch (true) {
+                case eventReg.test(name):
+                {
+                    ele.addEventListener(name.slice(2).toLowerCase(), prop[name]);
+                    break;
+                }
+                case name === 'ref':
+                {
+                    //console.log(spn);
+                    var component=$components[spn.$componentOrigin];
+                    component.refs[prop[name]]=ele;
+                    break;
+                }
+                default:
+                {
+                    ele.setAttribute(name, prop[name])
+                }
+            }
+        }.bind(this))
     }
 
     Sparrow_Node.prototype.tree = function () {
@@ -290,21 +324,18 @@
             ele = this._paintbrush.tree();
         } else {
             ele = document.createElement(nodeType);
-            this.component && ele.setAttribute('data-component', this.component.componentName);
+            this.$componentOrigin && !this.$notTrace && ele.setAttribute('data-component', this.$componentOrigin);
             if (this.prop) {
-                var props = Object.keys(this.prop);
-                props.forEach(function (prop) {
-                    ele.setAttribute(prop, this.prop[prop])
-                }.bind(this))
+                resolveProp(this,this.prop, ele);
             }
             if (children) {
                 for (var i = 0; i < children.length; i++) {
                     var child = children[i];
                     if (isSimple(child)) {
                         ele.appendChild(document.createTextNode(child));
-                    } else if(child){
-                            var r = child.tree();
-                            r && ele.appendChild(r)
+                    } else if (child) {
+                        var r = child.tree();
+                        r && ele.appendChild(r)
                     }
                 }
             }

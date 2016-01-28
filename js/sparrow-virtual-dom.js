@@ -178,6 +178,7 @@
 
     _Sparrow.prototype.nodeSync = function (mounted, diff) {
         console.log(mounted, diff);
+        var readyDelete=[];
         for (var i = 0; i < diff.length; i++) {
             var diffType = diff[i].type,
                 trace = diff[i].nodeIndex;
@@ -198,7 +199,9 @@
                 }
                 case DIFF.DELETE:
                 {
-                    parent.removeChild(child);
+                    child.setAttribute('ready-delete',true);
+                    //parent.removeChild(child);
+                    readyDelete.push({p:parent,c:child});
                     break;
                 }
                 case DIFF.DELETE_ALL:
@@ -221,6 +224,9 @@
                 }
             }
         }
+        each(readyDelete,function(item,i){
+            item.p.removeChild(item.c)
+        })
     };
 
     function Component(desc) {
@@ -307,6 +313,10 @@
                     //console.log(spn);
                     var component=$components[spn.$componentOrigin];
                     component.refs[prop[name]]=ele;
+                    break;
+                }
+                case name==='className':{
+                    ele.classList.add(prop[name]);
                     break;
                 }
                 default:

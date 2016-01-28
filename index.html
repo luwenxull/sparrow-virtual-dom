@@ -6,30 +6,6 @@
     <script src="js/underscore.js"></script>
     <script src="js/sparrow-virtual-dom.js"></script>
     <script>
-        //test
-        var node = sparrow.node;
-        var A = sparrow.component({
-            componentName: 'A',
-            render: function (p, s) {
-                if (s) {
-                    return sparrow.node('div', null, [s.age, node('p', {id: 'op'}, s.name)])
-                } else {
-                    return sparrow.node('div', null, ['maybe you should guess'])
-                }
-
-            }
-        });
-
-        var B = sparrow.component({
-            componentName: 'B',
-            render: function (p, s) {
-                return sparrow.node('div', null, [s.age, s.name])
-            }
-        });
-
-        var a = A.paint();
-    </script>
-    <script>
         var node = sparrow.node;
         var Container = sparrow.component({
             componentName: 'Container',
@@ -55,7 +31,7 @@
                 id: 'to-do-list'
             },
             initialState: {
-                items: [{name: 'eat', date: 'morning'}, {name: 'sex', date: 'night'}]
+                items: [{name: 'eat', date: 'morning'}, {name: 'sex', date: 'night'},{name:'sex'}]
             },
             render: function (p, s) {
                 var Items;
@@ -84,7 +60,7 @@
 </body>
 <script>
     function update() {
-        ToDoList.setState({items: [{name: 'swim', date: 'night'}, {name: 'fight', date: 'morning'}]});
+        ToDoList.setState({items: [{name: 'swim', date: 'night'}]});
     }
     var container = Container.paint();
     var c = document.getElementById('c');

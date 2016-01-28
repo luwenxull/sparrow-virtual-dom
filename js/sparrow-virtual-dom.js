@@ -31,13 +31,13 @@
 
     window.$components = {};
     _Sparrow.prototype.component = function (component) {
-        var generator=new ComponentGenerator();
-        generator.desc=component;
-        generator._constructor=Component;
+        var generator = new ComponentGenerator();
+        generator.desc = component;
+        generator._constructor = Component;
         return generator;
         /*var c = new Component(component);
-        $components[c.componentName] = c;
-        return c;*/
+         $components[c.componentName] = c;
+         return c;*/
     };
 
     _Sparrow.prototype.node = function (type, prop, children) {
@@ -112,15 +112,16 @@
     }
 
     /*diff*/
-    function sameType(newType,oldType){
-        if(isComponent(newType) && isComponent(oldType)){
-            return newType.componentName===oldType.componentName
-        }else if(isString(newType) && isString(oldType)){
-            return newType===oldType
-        }else{
+    function sameType(newType, oldType) {
+        if (isComponent(newType) && isComponent(oldType)) {
+            return newType.componentName === oldType.componentName
+        } else if (isString(newType) && isString(oldType)) {
+            return newType === oldType
+        } else {
             return false;
         }
     }
+
     _Sparrow.prototype.diff = function (newNode, oldNode, nodeLevel, nodeIndex, suffix) {
         var changes = [];
         nodeLevel === undefined && (nodeLevel = 0);
@@ -148,7 +149,7 @@
             return changes;
         }
         /*diff type*/
-        if (!sameType(nt,ot)) {
+        if (!sameType(nt, ot)) {
             changes.push(new Diff(DIFF.REPLACE, nodeLevel, nodeIndex, newNode));
         } else {
             switch (true) {
@@ -185,6 +186,10 @@
         return changes;
     };
 
+    _Sparrow.prototype.defineContext=function(context){
+      return new ContextOfComponent(context);
+    };
+
     _Sparrow.prototype.mount = function (spn, dom) {
         var componentDOM = spn.tree();
         dom.appendChild(componentDOM);
@@ -192,7 +197,7 @@
 
     _Sparrow.prototype.nodeSync = function (mounted, diff) {
         console.log(mounted, diff);
-        var readyDelete=[];
+        var readyDelete = [];
         for (var i = 0; i < diff.length; i++) {
             var diffType = diff[i].type,
                 trace = diff[i].nodeIndex;
@@ -213,9 +218,9 @@
                 }
                 case DIFF.DELETE:
                 {
-                    child.setAttribute('ready-delete',true);
+                    child.setAttribute('ready-delete', true);
                     //parent.removeChild(child);
-                    readyDelete.push({p:parent,c:child});
+                    readyDelete.push({p: parent, c: child});
                     break;
                 }
                 case DIFF.DELETE_ALL:
@@ -229,6 +234,7 @@
                 }
                 case DIFF.UPDATE_PROP:
                 {
+                    console.log('dddf');
                     break;
                 }
                 case DIFF.REPLACE:
@@ -238,53 +244,79 @@
                 }
             }
         }
-        each(readyDelete,function(item,i){
+        each(readyDelete, function (item, i) {
             item.p.removeChild(item.c)
         })
     };
 
-    function Component(desc) {
-        /*this._component = desc;
-        this.prop = desc.defaultProp && desc.defaultProp() || {};
-        this.state = desc.initialState && desc.initialState() || null;
-        this.refs=Object.create(null);
-        try {
-            if (!desc.componentName) {
-                throw 'you must give me a componentName';
-            }
-            this.componentName = desc.componentName;
-        } catch (err) {
-            console.error(err)
-        } finally {
 
-        }*/
-        extend(this,desc);
-        if(this.defaultProp){
+
+    function ContextOfComponent(context){
+        extend(this,context)
+    }
+
+    ContextOfComponent.prototype.update=function(component,newContext){
+
+        var ele = document.querySelector('[data-component=' + this.$identity + ']');
+        var oldNode = component.paint(),
+            newNode;
+        extend(this,newContext);
+        newNode = component.paint();
+        var diff = sparrow.diff(newNode, oldNode);
+        sparrow.nodeSync(ele, diff);
+    };
+    var uuid = 0;
+
+    function Component(desc, id) {
+        /*this._component = desc;
+         this.prop = desc.defaultProp && desc.defaultProp() || {};
+         this.state = desc.initialState && desc.initialState() || null;
+         this.refs=Object.create(null);
+         try {
+         if (!desc.componentName) {
+         throw 'you must give me a componentName';
+         }
+         this.componentName = desc.componentName;
+         } catch (err) {
+         console.error(err)
+         } finally {
+
+         }*/
+        extend(this, desc);
+        this.$identity = this.componentName + '-' + id;
+        /*if (this.defaultProp) {
             this.prop = this.defaultProp();
             delete this.defaultProp;
         }
-        if(this.initialState){
-            this.state=this.initialState();
+        if (this.initialState) {
+            this.state = this.initialState();
             delete  this.initialState;
-        }
-        this.refs={};
-        !this.prop && (this.prop={});
+        }*/
+        this.refs = {};
+        this.childComponents={};
+        //!this.prop && (this.prop = {});
+
         //$components[this.componentName] = this;
         console.log(this)
     }
 
-    function ComponentGenerator(){}
+    function ComponentGenerator() {
+        this.$currentIdentity = 0;
+    }
 
-    ComponentGenerator.prototype.paint=function(){
-        var componentInstance=new this._constructor(this.desc);
-        return componentInstance.paint()
+    ComponentGenerator.prototype.paint = function (context) {
+        var componentInstance = new this._constructor(this.desc, this.$currentIdentity++);
+        return componentInstance.paint(context)
     };
 
-    function childrenPaint(spn) {
+    function childrenPaint(pc,spn) {
         var component = spn.type;
 
         if (component instanceof Component) {
-            spn._paintbrush = component.paint(spn.prop);
+            //extend(component.prop,spn.outerProp||{});
+            //pc.childComponents[component.$identity]=component;
+            spn._paintbrush = component.paint(spn.outerProp);
+            //spn._mounted=true;
             delete spn.children;
         }
         if (typeof component === "string" && spn.children) {
@@ -292,51 +324,52 @@
                 var spn_c = spn.children[i];
                 if (spn_c) {
                     spn_c.$componentOrigin = spn.$componentOrigin;
-                    spn_c.$notTrace=true;
-                    childrenPaint(spn_c);
+                    spn_c.$notTrace = true;
+                    childrenPaint(pc,spn_c);
                 }
             }
         }
     }
 
     Component.prototype.paint = function (prop) {
-        var spn = this.render(extend({}, this.prop, prop || {}), this.state);
+        //var extendedProp=extend({}, this.prop, prop || {});
+        var spn = this.render(prop);
         spn.$componentOrigin = this;
-        childrenPaint(spn);
+        spn.$renderCopy=this.render;
+
+        childrenPaint(this,spn);
         this._cacheNode = spn;
+        console.log(spn);
         return spn;
     };
 
     Component.prototype.setState = function (state) {
-        var eles = document.querySelectorAll('[data-component=' + this.componentName + ']');
-
-        var oldNode = this._cacheNode,
+        var ele = document.querySelector('[data-component=' + this.$identity + ']');
+        var oldNode = this.paint(),
             newNode;
         if (!this.state) this.state = {};
         extend(this.state, state);
         newNode = this.paint();
-        //console.log(newNode);
-
         var diff = sparrow.diff(newNode, oldNode);
-        //!!
-        each(eles, function (ele, i) {
-            sparrow.nodeSync(ele, diff)
-        });
+        sparrow.nodeSync(ele, diff);
+
+        //this._cacheNode=newNode;
     };
+
     function Sparrow_Node(type, prop, children) {
-        if(type instanceof ComponentGenerator){
-            this.type = new type._constructor(type.desc);
-        }else{
+        if (type instanceof ComponentGenerator) {
+            this.type = new type._constructor(type.desc, type.$currentIdentity++);
+        } else {
             this.type = type;
         }
-        this.prop = prop;
+        this.outerProp = prop;
         if (!isArray(children)) children = [children];
         this.children = children;
     }
 
     var eventReg = /^on\w+/;
 
-    function resolveProp(spn,prop, ele) {
+    function resolveProp(spn, prop, ele) {
         var props = Object.keys(prop);
         props.forEach(function (name) {
             switch (true) {
@@ -348,11 +381,12 @@
                 case name === 'ref':
                 {
                     //console.log(spn);
-                    var component=spn.$componentOrigin;
-                    component.refs[prop[name]]=ele;
+                    var component = spn.$componentOrigin;
+                    component.refs[prop[name]] = ele;
                     break;
                 }
-                case name==='className':{
+                case name === 'className':
+                {
                     ele.classList.add(prop[name]);
                     break;
                 }
@@ -371,9 +405,9 @@
             ele = this._paintbrush.tree();
         } else {
             ele = document.createElement(nodeType);
-            this.$componentOrigin && !this.$notTrace && ele.setAttribute('data-component', this.$componentOrigin.componentName);
-            if (this.prop) {
-                resolveProp(this,this.prop, ele);
+            this.$componentOrigin && !this.$notTrace && ele.setAttribute('data-component', this.$componentOrigin.$identity);
+            if (this.outerProp) {
+                resolveProp(this, this.outerProp, ele);
             }
             if (children) {
                 for (var i = 0; i < children.length; i++) {

@@ -10,32 +10,32 @@
         var Container = sparrow.component({
             componentName: 'Container',
             handleClick: function () {
-                var newItem=this.refs.userInput.value;
-                this.setState({name:'se!!!'})
+                var newItem = this.refs.userInput.value;
+                var items = this.state.items;
+                items.push({name: newItem});
+//                this.setState({items:[{name:'test'}]})
+                this.setState({items: items})
+            },
+            initialState: function () {
+                return {items: [{name: 'eat', date: 'morning'}, {name: 'sex', date: 'night'}, {name: 'sex'}]}
             },
             render: function (p, s) {
-                console.log(s);
                 return node('div', null, [
                     node('div', null, [
-                        node('input', {ref:'userInput'}), node('button', {onClick: this.handleClick}, 'OK')
+                        node('input', {ref: 'userInput'}), node('button', {onClick: this.handleClick}, 'OK')
                     ]),
-                    node(ToDoList, null)
+                    node(ToDoList, s)
                 ])
             }
         });
 
         var ToDoList = sparrow.component({
             componentName: 'ToDoList',
-            defaultProp: function(){
+            defaultProp: function () {
                 return {id: 'to-do-list'}
             },
-            initialState: function (){
-                return {items: [{name: 'eat', date: 'morning'}, {name: 'sex', date: 'night'},{name:'sex'}]}
-            },
             render: function (p, s) {
-                var Items;
-                console.log(p);
-                Items = s.items.map(function (item) {
+                Items = p.items.map(function (item) {
                     return sparrow.node(ToDoItem, {item: item})
                 });
                 return sparrow.node('ul', {id: p.id}, Items)
@@ -49,21 +49,54 @@
             }
         });
 
+
+        var context = sparrow.defineContext({
+            items: ['dd', 'll'],
+            btn: 'it should be ok'
+        });
+
+        var A = sparrow.component({
+            componentName: 'A',
+            click: function () {
+                context.update(this, {
+                    items: ['DD', 'LL']
+                })
+            },
+            render: function () {
+//                console.log(this);
+                var bs = context.items.map(function (item) {
+                    return node(B, {name: item})
+                });
+                return node('div', null, bs);
+//                return node('div',null,[node('button',{onclick:this.click},context.btn),node('div',null,bs)])
+            }
+        });
+
+        var B = sparrow.component({
+            componentName: 'B',
+            click: function () {
+//              this.setState({age:'234'})
+            },
+            render: function (p) {
+                return node('p', {onclick: this.click}, p.name)
+            }
+        })
     </script>
 </head>
 <body>
 <h3>to-do-list</h3>
 
 <div id="c"></div>
-<button onclick="update()">update</button>
+<!--<button onclick="update()">update</button>-->
 </body>
 <script>
-    function update() {
-        ToDoList.setState({items: [{name: 'swim', date: 'night'}]});
-    }
-    var container = Container.paint();
+    /*var container = Container.paint();
+     var c = document.getElementById('c');
+     sparrow.mount(container, c);*/
+    var a = A.paint();
     var c = document.getElementById('c');
-    sparrow.mount(container, c);
+    sparrow.mount(a, c);
+
 
 </script>
 </html>

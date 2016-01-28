@@ -10,16 +10,15 @@
         var Container = sparrow.component({
             componentName: 'Container',
             handleClick: function () {
-//                console.log(ToDoList.state)
-                var newItem=Container.refs.userInput.value;
-                ToDoList.setState(ToDoList.state.items.push({name:newItem}))
+                var newItem=this.refs.userInput.value;
+                this.setState({name:'se!!!'})
             },
             render: function (p, s) {
+                console.log(s);
                 return node('div', null, [
                     node('div', null, [
                         node('input', {ref:'userInput'}), node('button', {onClick: this.handleClick}, 'OK')
                     ]),
-                    node('span', null, [s && s.name]),
                     node(ToDoList, null)
                 ])
             }
@@ -27,11 +26,11 @@
 
         var ToDoList = sparrow.component({
             componentName: 'ToDoList',
-            defaultProp: {
-                id: 'to-do-list'
+            defaultProp: function(){
+                return {id: 'to-do-list'}
             },
-            initialState: {
-                items: [{name: 'eat', date: 'morning'}, {name: 'sex', date: 'night'},{name:'sex'}]
+            initialState: function (){
+                return {items: [{name: 'eat', date: 'morning'}, {name: 'sex', date: 'night'},{name:'sex'}]}
             },
             render: function (p, s) {
                 var Items;

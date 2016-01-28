@@ -29,11 +29,15 @@
         this.version = '.0';
     }
 
-    var $components = {};
+    window.$components = {};
     _Sparrow.prototype.component = function (component) {
-        var c = new Component(component);
+        var generator=new ComponentGenerator();
+        generator.desc=component;
+        generator._constructor=Component;
+        return generator;
+        /*var c = new Component(component);
         $components[c.componentName] = c;
-        return c;
+        return c;*/
     };
 
     _Sparrow.prototype.node = function (type, prop, children) {
@@ -108,6 +112,15 @@
     }
 
     /*diff*/
+    function sameType(newType,oldType){
+        if(isComponent(newType) && isComponent(oldType)){
+            return newType.componentName===oldType.componentName
+        }else if(isString(newType) && isString(oldType)){
+            return newType===oldType
+        }else{
+            return false;
+        }
+    }
     _Sparrow.prototype.diff = function (newNode, oldNode, nodeLevel, nodeIndex, suffix) {
         var changes = [];
         nodeLevel === undefined && (nodeLevel = 0);
@@ -135,7 +148,7 @@
             return changes;
         }
         /*diff type*/
-        if (nt !== ot) {
+        if (!sameType(nt,ot)) {
             changes.push(new Diff(DIFF.REPLACE, nodeLevel, nodeIndex, newNode));
         } else {
             switch (true) {
@@ -168,11 +181,12 @@
                 }
             }
         }
+
         return changes;
     };
 
-    _Sparrow.prototype.mount = function (component, dom) {
-        var componentDOM = component.tree();
+    _Sparrow.prototype.mount = function (spn, dom) {
+        var componentDOM = spn.tree();
         dom.appendChild(componentDOM);
     };
 
@@ -230,9 +244,9 @@
     };
 
     function Component(desc) {
-        this._component = desc;
-        this.defaultProp = desc.defaultProp;
-        this.state = desc.initialState;
+        /*this._component = desc;
+        this.prop = desc.defaultProp && desc.defaultProp() || {};
+        this.state = desc.initialState && desc.initialState() || null;
         this.refs=Object.create(null);
         try {
             if (!desc.componentName) {
@@ -243,8 +257,28 @@
             console.error(err)
         } finally {
 
+        }*/
+        extend(this,desc);
+        if(this.defaultProp){
+            this.prop = this.defaultProp();
+            delete this.defaultProp;
         }
+        if(this.initialState){
+            this.state=this.initialState();
+            delete  this.initialState;
+        }
+        this.refs={};
+        !this.prop && (this.prop={});
+        //$components[this.componentName] = this;
+        console.log(this)
     }
+
+    function ComponentGenerator(){}
+
+    ComponentGenerator.prototype.paint=function(){
+        var componentInstance=new this._constructor(this.desc);
+        return componentInstance.paint()
+    };
 
     function childrenPaint(spn) {
         var component = spn.type;
@@ -266,12 +300,11 @@
     }
 
     Component.prototype.paint = function (prop) {
-        var spn = this._component.render(extend({}, this.defaultProp || {}, prop || {}), this.state);
-        spn.$componentOrigin = this.componentName;
+        var spn = this.render(extend({}, this.prop, prop || {}), this.state);
+        spn.$componentOrigin = this;
         childrenPaint(spn);
         this._cacheNode = spn;
         return spn;
-
     };
 
     Component.prototype.setState = function (state) {
@@ -291,7 +324,11 @@
         });
     };
     function Sparrow_Node(type, prop, children) {
-        this.type = type;
+        if(type instanceof ComponentGenerator){
+            this.type = new type._constructor(type.desc);
+        }else{
+            this.type = type;
+        }
         this.prop = prop;
         if (!isArray(children)) children = [children];
         this.children = children;
@@ -305,13 +342,13 @@
             switch (true) {
                 case eventReg.test(name):
                 {
-                    ele.addEventListener(name.slice(2).toLowerCase(), prop[name]);
+                    ele.addEventListener(name.slice(2).toLowerCase(), prop[name].bind(spn.$componentOrigin));
                     break;
                 }
                 case name === 'ref':
                 {
                     //console.log(spn);
-                    var component=$components[spn.$componentOrigin];
+                    var component=spn.$componentOrigin;
                     component.refs[prop[name]]=ele;
                     break;
                 }
@@ -334,7 +371,7 @@
             ele = this._paintbrush.tree();
         } else {
             ele = document.createElement(nodeType);
-            this.$componentOrigin && !this.$notTrace && ele.setAttribute('data-component', this.$componentOrigin);
+            this.$componentOrigin && !this.$notTrace && ele.setAttribute('data-component', this.$componentOrigin.componentName);
             if (this.prop) {
                 resolveProp(this,this.prop, ele);
             }

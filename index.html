@@ -57,16 +57,21 @@
 
         var A = sparrow.component({
             componentName: 'A',
+            acceptContext:true,
             click: function () {
-                context.update(this, {
+                /*context.update(this, {
                     items: ['DD', 'LL']
-                })
+                })*/
             },
             render: function () {
 //                console.log(this);
-                var bs = context.items.map(function (item) {
+                /*var bs = context.items.map(function (item) {
                     return node(B, {name: item})
+                });*/
+                var bs=sparrow.map(this.context.items,function(item){
+                    return node(B,item)
                 });
+//                this.context.dispatch();
                 return node('div', null, bs);
 //                return node('div',null,[node('button',{onclick:this.click},context.btn),node('div',null,bs)])
             }
@@ -74,11 +79,13 @@
 
         var B = sparrow.component({
             componentName: 'B',
+
             click: function () {
 //              this.setState({age:'234'})
+                console.log(this)
             },
             render: function (p) {
-                return node('p', {onclick: this.click}, p.name)
+                return node('p', {onclick: this.click}, p)
             }
         })
     </script>
@@ -93,7 +100,8 @@
     /*var container = Container.paint();
      var c = document.getElementById('c');
      sparrow.mount(container, c);*/
-    var a = A.paint();
+    var a = A.with(context).paint();
+//    sparrow.with(context,a);
     var c = document.getElementById('c');
     sparrow.mount(a, c);
 

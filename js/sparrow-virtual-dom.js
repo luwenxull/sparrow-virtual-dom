@@ -73,6 +73,87 @@
         this.newVal = newVal;
     }
 
+    function traceChild(ele, trace) {
+        var traceArr = trace.split('-').slice(1);
+        var child = parent = ele, index = 0;
+        while (index < traceArr.length) {
+            parent = child;
+            child = child.childNodes[traceArr[index]];
+            index++;
+        }
+        return {
+            parent: parent,
+            child: child
+        }
+    }
+
+    function toDOMNode(node,component) {
+        if (isString(node) || isNumber(node)) {
+            return document.createTextNode(node)
+        } else {
+            return tree(node,component);
+        }
+    }
+
+    function nodeSync(mounted, diff,component) {
+        console.log(mounted, diff);
+        var readyDelete = [];
+        for (var i = 0; i < diff.length; i++) {
+            var diffType = diff[i].type,
+                trace = diff[i].nodeIndex+'';
+            var newValues = diff[i].newVal;
+            var r = traceChild(mounted, trace);
+            var child = r.child, parent = r.parent;
+            switch (diffType) {
+                case DIFF.CREATE :
+                {
+                    for (var ci = 0; ci < newValues.length; ci++) {
+                        parent.appendChild(toDOMNode(newValues[ci],component))
+                    }
+                    break;
+                }
+                case DIFF.CREATE_ALL:
+                {
+                    break;
+                }
+                case DIFF.DELETE:
+                {
+                    child.setAttribute('ready-delete', true);
+                    //parent.removeChild(child);
+                    readyDelete.push({p: parent, c: child});
+                    break;
+                }
+                case DIFF.DELETE_ALL:
+                {
+                    break;
+                }
+                case DIFF.UPDATE:
+                {
+                    child.data = diff[i].newVal;
+                    break;
+                }
+                case DIFF.UPDATE_PROP:
+                {
+                    break;
+                }
+                case DIFF.REPLACE:
+                {
+                    if(trace==='0'){
+                        var newDOM=toDOMNode(newValues,component);
+                        parent.parentNode.replaceChild(newDOM,parent);
+                        component.$renderedDOM=newDOM;
+                    }else{
+                        parent.replaceChild(toDOMNode(newValues,component), child);
+                    }
+                    break;
+                }
+            }
+        }
+        each(readyDelete, function (item, i) {
+            item.p.removeChild(item.c)
+        })
+    }
+
     function diffTwoNodes(newNode, oldNode, nodeLevel, nodeIndex, suffix) {
         var changes = [];
         nodeLevel === undefined && (nodeLevel = 0);
@@ -140,12 +221,34 @@
 
     }
 
+    SparrowNode.prototype.paint=function(){
+        var type=this.type,prop=this.prop;
+        if(isComponent(type)){
+            var component=new type();
+            extend(component.prop, prop || {});
+            console.log(component);
+            var node=this._paintbrush=component.render();
+            this._generatedComponent=component;
+            delete this.children;
+            node.paint();
+        }else if(isString(type)){
+            var children=this.children;
+            for(var i=0;i<children.length;i++){
+                var child=children[i];
+                if(!isSimple(child)){
+                    child.paint()
+                }
+            }
+        }
+        return this;
+    };
+
     function node(type, prop, children) {
         var node = new SparrowNode();
         node.type = type;
         node.prop = prop;
 
-        if (!isArray(children)) {
+        if (children && !isArray(children)) {
             children = [children]
         }
         node.children = children;
@@ -153,60 +256,50 @@
     }
 
     function Facade() {
+//            extend(this,obj)
+        this.uuidFromProto={
+            uuid:0
+        }
     }
 
     Facade.prototype = {
         constructor: Facade,
         setState: function (newState) {
 //                console.log(this)
-            var oldNode = this._cacheNode._paintbrush;//这一步可能有问题
+            var oldNode = this.render().paint();//这一步可能有问题
             extend(this.state, newState);
-            var newNode = this.render();
+            var newNode = this.render().paint();
             var diffs = diffTwoNodes(newNode, oldNode);
-            console.log(diffs)
+//                console.log(diffs)
+            nodeSync(this.$renderedDOM, diffs,this)
         }
     };
-    function mount(spn, parent) {
-
-//            var ele=tree(spn);
-        console.log(ele);
-        console.log(spn);
-//            parent.appendChild(ele)
-    }
 
     var uuid = 0;
-    function tree(spn, component) {
+    function tree(spn, parentComponent) {
         var ele;
         if (typeof spn === 'string') {
             ele = document.createTextNode(spn);
         }
         var type = spn.type, prop, attr, children = spn.children;
         prop = attr = spn.prop;
-        if (typeof type === 'function') {
-            var componentInstance = new type();
-            extend(componentInstance.prop, prop || {});
-
-            var node = componentInstance.render();
-            //do something for future diff
-            spn._paintbrush = node;
-            delete spn.children;
-            componentInstance._cacheNode = spn;
-
-            ele = tree(node, componentInstance);
-            componentInstance.$renderedDOM = ele;
-            console.log(componentInstance);
+        if (isComponent(type)) {
+            var component=spn._generatedComponent;
+            ele=tree(spn._paintbrush,component);
+            component.$renderedDOM=ele;
         }
-        if (typeof type === 'string') {
+        if (isString(type)) {
             ele = document.createElement(type);
             each(children, function (child, i) {
-                ele.appendChild(tree(child))
+                ele.appendChild(tree(child,parentComponent))
             });
             if (attr && attr.onClick) {
-                ele.addEventListener('click', component.handleClick.bind(component))
+                ele.addEventListener('click', attr.onClick.bind(parentComponent))
             }
         }
         return ele;
     }
+
     var sparrow = {
         createComponent: function (describe) {
             var Component = function () {
@@ -215,6 +308,9 @@
                 this.state = this.initialState && this.initialState() || {};
                 this.prop = this.defaultProp && this.defaultProp() || {};
 
+                var ufp=this.uuidFromProto;
+                this.$traceId=this.componentName+'-'+ufp.uuid++;
+                this._traceChildren=[];
                 delete this.initialState;
                 delete this.defaultProp;
             };
@@ -224,17 +320,14 @@
             Component.prototype = facade;
 
             Component.$componentName = describe.componentName;
-            Component.$identity = 'Constructor of Component ' + describe.componentName;
+//                Component.$identity = 'Constructor of Component ' + describe.componentName;
             return Component;
         },
         mount: function (spn, parent) {
-//                paint(spn);
-            var ele=tree(spn);
-            console.log(ele);
-            console.log(spn);
+            var ele = tree(spn.paint());
+//                console.log(ele);
+//                console.log(spn);
             parent.appendChild(ele)
         }
     };
-
-    window.sparrow=sparrow;
 })(window);

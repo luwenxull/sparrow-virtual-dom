@@ -39,7 +39,7 @@
     }
 
     function isSimple(data) {
-        return typeof data === 'string' || typeof data === 'number'
+        return typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean'
     }
 
     function isArray(arr) {
@@ -87,20 +87,20 @@
         }
     }
 
-    function toDOMNode(node,component) {
+    function toDOMNode(node, component) {
         if (isString(node) || isNumber(node)) {
             return document.createTextNode(node)
         } else {
-            return tree(node,component);
+            return tree(node, component);
         }
     }
 
-    function nodeSync(mounted, diff,component) {
+    function nodeSync(mounted, diff, component) {
         console.log(mounted, diff);
         var readyDelete = [];
         for (var i = 0; i < diff.length; i++) {
             var diffType = diff[i].type,
-                trace = diff[i].nodeIndex+'';
+                trace = diff[i].nodeIndex + '';
             var newValues = diff[i].newVal;
             var r = traceChild(mounted, trace);
             var child = r.child, parent = r.parent;
@@ -108,7 +108,7 @@
                 case DIFF.CREATE :
                 {
                     for (var ci = 0; ci < newValues.length; ci++) {
-                        parent.appendChild(toDOMNode(newValues[ci],component))
+                        parent.appendChild(toDOMNode(newValues[ci], component))
                     }
                     break;
                 }
@@ -138,12 +138,12 @@
                 }
                 case DIFF.REPLACE:
                 {
-                    if(trace==='0'){
-                        var newDOM=toDOMNode(newValues,component);
-                        parent.parentNode.replaceChild(newDOM,parent);
-                        component.$renderedDOM=newDOM;
-                    }else{
-                        parent.replaceChild(toDOMNode(newValues,component), child);
+                    if (trace === '0') {
+                        var newDOM = toDOMNode(newValues, component);
+                        parent.parentNode.replaceChild(newDOM, parent);
+                        component.$renderedDOM = newDOM;
+                    } else {
+                        parent.replaceChild(toDOMNode(newValues, component), child);
                     }
                     break;
                 }
@@ -217,48 +217,95 @@
 
         return changes;
     }
-    function SparrowNode() {
 
+    function SparrowNode() {
     }
 
-    SparrowNode.prototype.paint=function(){
-        var type=this.type,prop=this.prop;
-        if(isComponent(type)){
-            var component=new type();
-            extend(component.prop, prop || {});
-            console.log(component);
-            var node=this._paintbrush=component.render();
-            this._generatedComponent=component;
-            delete this.children;
-            node.paint();
-        }else if(isString(type)){
-            var children=this.children;
-            for(var i=0;i<children.length;i++){
-                var child=children[i];
-                if(!isSimple(child)){
-                    child.paint()
-                }
-            }
+    function initialTraceAndAdd(parentComponent, componentName, component) {
+        var cps = parentComponent._traceChildrenComponent;
+        if (!cps[componentName]) {
+            cps[componentName] = [];
+            cps[componentName].currentIndex = 0;
         }
+        cps[componentName].push(component)
+    }
+
+    function createComponentAndTrace(type, parentComponent, spn) {
+        var component = new type(), componentName = type.$componentName;
+        spn._generatedByComponent = component;
+        extend(component.prop, spn.prop || {});
+
+        var node = spn._paintbrush = component.render();
+        delete spn.children;
+
+        parentComponent && initialTraceAndAdd(parentComponent, componentName, component);
+
+        component._cacheNode = spn;
+
+        return {node: node, component: component}
+    }
+
+    SparrowNode.prototype.firstPaint = function (parentComponent) {
+        var type = this.type, prop = this.prop;
+        var r;
+        if (isComponent(type)) {
+            r = createComponentAndTrace(type, parentComponent, this);
+            r.node.firstPaint(r.component);
+        } else if (isString(type)) {
+            each(this.children, function (child, i) {
+                if (!isSimple(child)) {
+                    child.firstPaint(parentComponent)
+                }
+            });
+        }
+        //this.painted = true;
+        return this;
+    };
+    SparrowNode.prototype.subsequentPaint = function (parentComponent) {
+        var type = this.type, prop = this.prop;
+        if (isComponent(type)) {
+            var componentName = type.$componentName, component
+                , cc, node, r;
+            var cps = parentComponent._traceChildrenComponent;//childrenComponents
+            if (cc = cps[componentName]) {//array consist of childComponent
+                component = cc[cc.currentIndex++];
+                if (component) {
+                    this._generatedByComponent = component;
+                    extend(component.prop, prop || {});
+                    node = this._paintbrush = component.render();
+                    delete this.children;
+
+                    component._cacheNode = this;
+                    node.subsequentPaint(component)
+                } else {
+                    r = createComponentAndTrace(type, parentComponent, this);
+                    r.node.subsequentPaint(r.component);
+                }
+            } else {
+                r = createComponentAndTrace(type, parentComponent, this);
+                r.node.subsequentPaint(r.component);
+            }
+        } else if (isString(type)) {
+            each(this.children, function (child, i) {
+                if (!isSimple(child)) {
+                    child.subsequentPaint(parentComponent)
+                }
+            });
+            var components = Object.keys(parentComponent._traceChildrenComponent);
+            each(components, function (c, i) {
+                parentComponent._traceChildrenComponent[c].currentIndex = 0;
+            });
+        }
+        //this.painted = true;
+
         return this;
     };
 
-    function node(type, prop, children) {
-        var node = new SparrowNode();
-        node.type = type;
-        node.prop = prop;
-
-        if (children && !isArray(children)) {
-            children = [children]
-        }
-        node.children = children;
-        return node;
-    }
 
     function Facade() {
 //            extend(this,obj)
-        this.uuidFromProto={
-            uuid:0
+        this.uuidFromProto = {
+            uuid: 0
         }
     }
 
@@ -266,17 +313,52 @@
         constructor: Facade,
         setState: function (newState) {
 //                console.log(this)
-            var oldNode = this.render().paint();//这一步可能有问题
+            var oldNode = this.render().subsequentPaint(this);//这一步可能有问题
             extend(this.state, newState);
-            var newNode = this.render().paint();
+            var newNode = this.render().subsequentPaint(this);
+            console.log(oldNode, newNode);
             var diffs = diffTwoNodes(newNode, oldNode);
 //                console.log(diffs)
-            nodeSync(this.$renderedDOM, diffs,this)
+            nodeSync(this.$renderedDOM, diffs, this)
         }
     };
 
     var uuid = 0;
+
+    var eventReg = /^on\w+/;
+
+    function resolveProp(prop, ele, component) {
+        var propsNames = Object.keys(prop);
+        each(propsNames, function (name, i) {
+            switch (true) {
+                case eventReg.test(name):
+                {
+                    ele.addEventListener(name.slice(2).toLowerCase(), prop[name].bind(component));
+                    break;
+                }
+                case name === 'ref':
+                {
+                    //console.log(spn);
+                    /*var component=$components[spn.$componentOrigin];
+                     component.refs[prop[name]]=ele;*/
+                    break;
+                }
+                case name === 'className':
+                {
+                    ele.classList.add(prop[name]);
+                    break;
+                }
+                default:
+                {
+                    ele.setAttribute(name, prop[name])
+                }
+            }
+        });
+    }
+
+    /*转换成实际的DOM*/
     function tree(spn, parentComponent) {
+        //console.log(spn);
         var ele;
         if (typeof spn === 'string') {
             ele = document.createTextNode(spn);
@@ -284,33 +366,35 @@
         var type = spn.type, prop, attr, children = spn.children;
         prop = attr = spn.prop;
         if (isComponent(type)) {
-            var component=spn._generatedComponent;
-            ele=tree(spn._paintbrush,component);
-            component.$renderedDOM=ele;
+            var component = spn._generatedByComponent;
+            ele = tree(spn._paintbrush, component);
+            component.$renderedDOM = ele;
         }
         if (isString(type)) {
             ele = document.createElement(type);
+            prop && resolveProp(prop, ele, parentComponent);
             each(children, function (child, i) {
-                ele.appendChild(tree(child,parentComponent))
+                ele.appendChild(tree(child, parentComponent))
             });
-            if (attr && attr.onClick) {
-                ele.addEventListener('click', attr.onClick.bind(parentComponent))
-            }
+            /*            if (attr && attr.onClick) {
+             ele.addEventListener('click', attr.onClick.bind(parentComponent))
+             }*/
         }
         return ele;
     }
 
-    var sparrow = {
-        createComponent: function (describe) {
+    function Sparrow() {
+        this.version = '0.0.1';
+        this.createComponent = function (describe) {
             var Component = function () {
                 extend(this, describe);
                 /**/
                 this.state = this.initialState && this.initialState() || {};
                 this.prop = this.defaultProp && this.defaultProp() || {};
 
-                var ufp=this.uuidFromProto;
-                this.$traceId=this.componentName+'-'+ufp.uuid++;
-                this._traceChildren=[];
+                var ufp = this.uuidFromProto;
+                this.$traceId = this.componentName + '-' + ufp.uuid++;
+                this._traceChildrenComponent = Object.create(null);
                 delete this.initialState;
                 delete this.defaultProp;
             };
@@ -322,12 +406,25 @@
             Component.$componentName = describe.componentName;
 //                Component.$identity = 'Constructor of Component ' + describe.componentName;
             return Component;
-        },
-        mount: function (spn, parent) {
-            var ele = tree(spn.paint());
+        };
+        this.mount = function (spn, parent) {
+            var ele = tree(spn.firstPaint());
 //                console.log(ele);
 //                console.log(spn);
             parent.appendChild(ele)
+        };
+        this.createNode = function (type, prop, children) {
+            var node = new SparrowNode();
+            node.type = type;
+            node.prop = prop;
+
+            if (children && !isArray(children)) {
+                children = [children]
+            }
+            node.children = children;
+            return node;
         }
-    };
+    }
+
+    window.sparrow = new Sparrow();
 })(window);

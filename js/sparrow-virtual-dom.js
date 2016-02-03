@@ -20,8 +20,10 @@
     }
 
     function each(items, iterator) {
-        for (var i = 0; i < items.length; i++) {
-            iterator(items[i], i)
+        if(items){
+            for (var i = 0; i < items.length; i++) {
+                iterator(items[i], i)
+            }
         }
     }
 
@@ -96,7 +98,7 @@
     }
 
     function nodeSync(mounted, diff, component) {
-        console.log(mounted, diff);
+        //console.log(mounted, diff);
         var readyDelete = [];
         for (var i = 0; i < diff.length; i++) {
             var diffType = diff[i].type,
@@ -312,13 +314,11 @@
     Facade.prototype = {
         constructor: Facade,
         setState: function (newState) {
-//                console.log(this)
             var oldNode = this.render().subsequentPaint(this);//这一步可能有问题
             extend(this.state, newState);
             var newNode = this.render().subsequentPaint(this);
             console.log(oldNode, newNode);
             var diffs = diffTwoNodes(newNode, oldNode);
-//                console.log(diffs)
             nodeSync(this.$renderedDOM, diffs, this)
         }
     };
@@ -339,8 +339,7 @@
                 case name === 'ref':
                 {
                     //console.log(spn);
-                    /*var component=$components[spn.$componentOrigin];
-                     component.refs[prop[name]]=ele;*/
+                    component.refs[prop[name]]=ele;
                     break;
                 }
                 case name === 'className':
@@ -395,6 +394,9 @@
                 var ufp = this.uuidFromProto;
                 this.$traceId = this.componentName + '-' + ufp.uuid++;
                 this._traceChildrenComponent = Object.create(null);
+                this.refs=Object.create(null);
+
+                //console.log(this);
                 delete this.initialState;
                 delete this.defaultProp;
             };
@@ -409,8 +411,6 @@
         };
         this.mount = function (spn, parent) {
             var ele = tree(spn.firstPaint());
-//                console.log(ele);
-//                console.log(spn);
             parent.appendChild(ele)
         };
         this.createNode = function (type, prop, children) {

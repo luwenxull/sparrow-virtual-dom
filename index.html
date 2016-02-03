@@ -46,7 +46,7 @@
             return {location:'suzhou'}
         },
         render: function () {
-            return node('p', {onClick: this.handleClick}, [this.prop.name,this.state.location])
+            return node('p', {onClick: this.handleClick,ref:'p'}, [this.prop.name,this.state.location])
         }
     });
 

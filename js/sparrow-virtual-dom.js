@@ -480,7 +480,12 @@
             if (children && !isArray(children)) {
                 children = [children]
             }
-            node.children = children;
+
+            var filterChildren=[];
+            each(children,function(child){
+                if(child!==null && child!==undefined) filterChildren.push(child)
+            });
+            node.children = filterChildren;
             return node;
         };
         this.defineMessenger = function (data) {

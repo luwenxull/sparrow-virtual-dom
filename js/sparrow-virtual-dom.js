@@ -20,7 +20,7 @@
     }
 
     function each(items, iterator) {
-        if(items){
+        if (items) {
             for (var i = 0; i < items.length; i++) {
                 iterator(items[i], i)
             }
@@ -136,6 +136,10 @@
                 }
                 case DIFF.UPDATE_PROP:
                 {
+                    var keys=Object.keys(newValues);
+                    each(keys,function(key){
+                        child.setAttribute(key,newValues[key])
+                    });
                     break;
                 }
                 case DIFF.REPLACE:
@@ -156,6 +160,18 @@
         })
     }
 
+    function diffProp(newNode, oldNode, nodeLevel, nodeIndex, changes){
+        var np=newNode.prop,op=oldNode.prop;
+        var np_props=Object.keys(np||{}),op_props=Object.keys(op||{});
+        var diff={},hasDiff=false;
+        each(np_props,function(pName){
+            if(np[pName]!==op[pName]){
+                hasDiff=true;
+                diff[pName]=np[pName]
+            }
+        });
+        hasDiff && changes.push(new Diff(DIFF.UPDATE_PROP,nodeLevel,nodeIndex,diff))
+    }
     function diffTwoNodes(newNode, oldNode, nodeLevel, nodeIndex, suffix) {
         var changes = [];
         nodeLevel === undefined && (nodeLevel = 0);
@@ -194,7 +210,7 @@
                 }
                 case(isString(nt)):
                 {
-//                        diffProp(newNode, oldNode, nodeLevel, nodeIndex, changes);
+                    diffProp(newNode, oldNode, nodeLevel, nodeIndex, changes);
                     var nc = newNode.children, oc = oldNode.children;
                     nodeLevel++;
                     /*both no children*/
@@ -263,7 +279,7 @@
         //this.painted = true;
         return this;
     };
-    SparrowNode.prototype.subsequentPaint = function (parentComponent) {
+    SparrowNode.prototype.subsequentPaint = function (parentComponent,ifChild) {
         var type = this.type, prop = this.prop;
         if (isComponent(type)) {
             var componentName = type.$componentName, component
@@ -290,13 +306,20 @@
         } else if (isString(type)) {
             each(this.children, function (child, i) {
                 if (!isSimple(child)) {
-                    child.subsequentPaint(parentComponent)
+                    child.subsequentPaint(parentComponent,true)
                 }
             });
-            var components = Object.keys(parentComponent._traceChildrenComponent);
-            each(components, function (c, i) {
-                parentComponent._traceChildrenComponent[c].currentIndex = 0;
-            });
+            if(!ifChild){
+                var components = Object.keys(parentComponent._traceChildrenComponent);
+                each(components, function (c, i) {
+                    var trace=parentComponent._traceChildrenComponent[c],index=trace.currentIndex;
+                    if(index<trace.length){
+                        trace.splice(index)
+                    }
+                    parentComponent._traceChildrenComponent[c].currentIndex = 0;
+
+                });
+            }
         }
         //this.painted = true;
 
@@ -304,6 +327,20 @@
     };
 
 
+    var pubAndSub={
+        addSub:function(name,fn,component){
+            if(!this[name]) this[name]=[];
+            this[name].push(fn.bind(component))
+        },
+        publish:function(name,data,component){
+            if(this[name]){
+                var callbacks=this[name];
+                each(callbacks,function(cb){
+                    cb(data,component)
+                })
+            }
+        }
+    };
     function Facade() {
 //            extend(this,obj)
         this.uuidFromProto = {
@@ -320,6 +357,12 @@
             console.log(oldNode, newNode);
             var diffs = diffTwoNodes(newNode, oldNode);
             nodeSync(this.$renderedDOM, diffs, this)
+        },
+        pub:function(name,data){
+            pubAndSub.publish(name,data,this)
+        },
+        sub:function(name,fn){
+            pubAndSub.addSub(name,fn,this)
         }
     };
 
@@ -339,7 +382,7 @@
                 case name === 'ref':
                 {
                     //console.log(spn);
-                    component.refs[prop[name]]=ele;
+                    component.refs[prop[name]] = ele;
                     break;
                 }
                 case name === 'className':
@@ -382,6 +425,20 @@
         return ele;
     }
 
+    function Messenger(data) {
+        extend(this, data);
+    }
+
+    Messenger.prototype.emit = function (name,data) {
+
+    };
+    Messenger.prototype.on = function (name,callback) {
+
+    };
+    Messenger.prototype.ready=function(fn){
+        //this.allow
+    };
+
     function Sparrow() {
         this.version = '0.0.1';
         this.createComponent = function (describe) {
@@ -391,14 +448,16 @@
                 this.state = this.initialState && this.initialState() || {};
                 this.prop = this.defaultProp && this.defaultProp() || {};
 
+                this.willMount && this.willMount();
                 var ufp = this.uuidFromProto;
                 this.$traceId = this.componentName + '-' + ufp.uuid++;
                 this._traceChildrenComponent = Object.create(null);
-                this.refs=Object.create(null);
+                this.refs = Object.create(null);
 
                 //console.log(this);
                 delete this.initialState;
                 delete this.defaultProp;
+                delete this.willMount;
             };
 
             var facade = new Facade();
@@ -423,6 +482,9 @@
             }
             node.children = children;
             return node;
+        };
+        this.defineMessenger = function (data) {
+            var messenger = new Messenger(data)
         }
     }
 

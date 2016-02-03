@@ -11,21 +11,31 @@
 <div id="two"></div>
 </body>
 <script>
-    var context = {};
+    var messenger=sparrow.defineMessenger({
+        data:{
+            date:'2016-12'
+        }
+    });
+
     var node=sparrow.createNode;
     var A = sparrow.createComponent({
         componentName: 'A',
+        willMount:function(){
+            this.sub('delete',function(message,from){
+                console.log(message,from)
+            })
+        },
         handleClick: function (event) {
 //                console.log(this,event)
             this.setState({
-                bs:['lu','dai']
+                bs:['Some body','ddddf','djjljlj']
             });
         },
         defaultProp: function () {
             return {age: '11'}
         },
         initialState: function () {
-            return {bs:['lu']}
+            return {bs:['lu','dai']}
         },
         render: function () {
             var bs=this.state.bs.map(function(b){
@@ -40,7 +50,8 @@
     var B = sparrow.createComponent({
         componentName: 'B',
         handleClick: function (event) {
-            this.setState({location:'nantong'})
+            this.setState({location:'nantong'});
+            this.pub('delete','1');
         },
         initialState: function () {
             return {location:'suzhou'}
@@ -53,11 +64,10 @@
     var C = sparrow.createComponent({
         componentName: 'C',
         render: function () {
-            return node(A, this.prop)
+            return node(A)
         }
     });
-    var a = node(C, {diff: 'test'});
-    var a2 = node(C, {diff: 'still test'});
+    var a = node(C);
     //    sparrow.with()
 
     //    console.log(tree(a),tree(a2));

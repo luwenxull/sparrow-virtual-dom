@@ -120,10 +120,15 @@
                 }
                 case DIFF.DELETE:
                 {
-                    child.setAttribute('ready-delete', true);
-                    //parent.removeChild(child);
-                    readyDelete.push({p: parent, c: child});
+                    try {
+                        child.setAttribute('ready-delete', true);
+                    } catch (err) {
+                        console.error(err.name + ':' + err.message)
+                    } finally {
+                        readyDelete.push({p: parent, c: child});
+                    }
                     break;
+                    //parent.removeChild(child);
                 }
                 case DIFF.DELETE_ALL:
                 {
@@ -136,9 +141,9 @@
                 }
                 case DIFF.UPDATE_PROP:
                 {
-                    var keys=Object.keys(newValues);
-                    each(keys,function(key){
-                        child.setAttribute(key,newValues[key])
+                    var keys = Object.keys(newValues);
+                    each(keys, function (key) {
+                        child.setAttribute(key, newValues[key])
                     });
                     break;
                 }
@@ -160,18 +165,19 @@
         })
     }
 
-    function diffProp(newNode, oldNode, nodeLevel, nodeIndex, changes){
-        var np=newNode.prop,op=oldNode.prop;
-        var np_props=Object.keys(np||{}),op_props=Object.keys(op||{});
-        var diff={},hasDiff=false;
-        each(np_props,function(pName){
-            if(np[pName]!==op[pName]){
-                hasDiff=true;
-                diff[pName]=np[pName]
+    function diffProp(newNode, oldNode, nodeLevel, nodeIndex, changes) {
+        var np = newNode.prop, op = oldNode.prop;
+        var np_props = Object.keys(np || {}), op_props = Object.keys(op || {});
+        var diff = {}, hasDiff = false;
+        each(np_props, function (pName) {
+            if (np[pName] !== op[pName]) {
+                hasDiff = true;
+                diff[pName] = np[pName]
             }
         });
-        hasDiff && changes.push(new Diff(DIFF.UPDATE_PROP,nodeLevel,nodeIndex,diff))
+        hasDiff && changes.push(new Diff(DIFF.UPDATE_PROP, nodeLevel, nodeIndex, diff))
     }
+
     function diffTwoNodes(newNode, oldNode, nodeLevel, nodeIndex, suffix) {
         var changes = [];
         nodeLevel === undefined && (nodeLevel = 0);
@@ -279,7 +285,7 @@
         //this.painted = true;
         return this;
     };
-    SparrowNode.prototype.subsequentPaint = function (parentComponent,ifChild) {
+    SparrowNode.prototype.subsequentPaint = function (parentComponent, ifChild) {
         var type = this.type, prop = this.prop;
         if (isComponent(type)) {
             var componentName = type.$componentName, component
@@ -306,14 +312,14 @@
         } else if (isString(type)) {
             each(this.children, function (child, i) {
                 if (!isSimple(child)) {
-                    child.subsequentPaint(parentComponent,true)
+                    child.subsequentPaint(parentComponent, true)
                 }
             });
-            if(!ifChild){
+            if (!ifChild) {
                 var components = Object.keys(parentComponent._traceChildrenComponent);
                 each(components, function (c, i) {
-                    var trace=parentComponent._traceChildrenComponent[c],index=trace.currentIndex;
-                    if(index<trace.length){
+                    var trace = parentComponent._traceChildrenComponent[c], index = trace.currentIndex;
+                    if (index < trace.length) {
                         trace.splice(index)
                     }
                     parentComponent._traceChildrenComponent[c].currentIndex = 0;
@@ -327,20 +333,21 @@
     };
 
 
-    var pubAndSub={
-        addSub:function(name,fn,component){
-            if(!this[name]) this[name]=[];
+    var pubAndSub = {
+        addSub: function (name, fn, component) {
+            if (!this[name]) this[name] = [];
             this[name].push(fn.bind(component))
         },
-        publish:function(name,data,component){
-            if(this[name]){
-                var callbacks=this[name];
-                each(callbacks,function(cb){
-                    cb(data,component)
+        publish: function (name, data, component) {
+            if (this[name]) {
+                var callbacks = this[name];
+                each(callbacks, function (cb) {
+                    cb(data, component)
                 })
             }
         }
     };
+
     function Facade() {
 //            extend(this,obj)
         this.uuidFromProto = {
@@ -351,18 +358,39 @@
     Facade.prototype = {
         constructor: Facade,
         setState: function (newState) {
-            var oldNode = this.render().subsequentPaint(this);//这一步可能有问题
-            extend(this.state, newState);
+            var oldNode = //这一步可能有问题
+                extend(this.state, newState);
             var newNode = this.render().subsequentPaint(this);
             console.log(oldNode, newNode);
             var diffs = diffTwoNodes(newNode, oldNode);
             nodeSync(this.$renderedDOM, diffs, this)
         },
-        pub:function(name,data){
-            pubAndSub.publish(name,data,this)
+        current: function () {
+            return this.render().subsequentPaint(this);
         },
-        sub:function(name,fn){
-            pubAndSub.addSub(name,fn,this)
+        update: function (newNode, oldNode) {
+            var diffs = diffTwoNodes(newNode, oldNode);
+            nodeSync(this.$renderedDOM, diffs, this)
+        },
+        pub: function (name, data) {
+            pubAndSub.publish(name, data, this)
+        },
+        sub: function (name, fn) {
+            pubAndSub.addSub(name, fn, this)
+        },
+        call: function (mName, service, data) {
+            var _this = this
+                , messenger = postOffice[mName]
+                , root = messenger.updateRoot;
+            var old = root.current();
+            each(messenger[service], function (cb) {
+                cb(data, _this)
+            });
+            var n = root.current();
+            var date=new Date();
+            root.update(n, old);
+            var c=new Date();
+            console.log(c-date)
         }
     };
 
@@ -387,7 +415,10 @@
                 }
                 case name === 'className':
                 {
-                    ele.classList.add(prop[name]);
+                    var values = prop[name], val = values.split(' ');
+                    each(val, function (v) {
+                        ele.classList.add(v)
+                    });
                     break;
                 }
                 default:
@@ -425,18 +456,22 @@
         return ele;
     }
 
+
+    var postOffice = {};
+
     function Messenger(data) {
         extend(this, data);
     }
 
-    Messenger.prototype.emit = function (name,data) {
-
-    };
-    Messenger.prototype.on = function (name,callback) {
-
-    };
-    Messenger.prototype.ready=function(fn){
+    Messenger.prototype.wait = function (service, callback) {
         //this.allow
+        if (!this[service]) this[service] = [];
+        this[service].push(callback.bind(this));
+        return this;
+    };
+
+    Messenger.prototype.root = function (component) {
+        this.updateRoot = component;
     };
 
     function Sparrow() {
@@ -481,16 +516,27 @@
                 children = [children]
             }
 
-            var filterChildren=[];
-            each(children,function(child){
-                if(child!==null && child!==undefined) filterChildren.push(child)
+            var filterChildren = [];
+            each(children, function (child) {
+                if (child !== null && child !== undefined) filterChildren.push(child)
             });
             node.children = filterChildren;
             return node;
         };
-        this.defineMessenger = function (data) {
-            var messenger = new Messenger(data)
-        }
+        this.defineMessenger = function (source) {
+            var name = source.name;
+            if (!name) {
+                console.error('you must give name of this messenger');
+                return;
+            }
+            var data = source.data
+                , methods = source.methods;
+            return postOffice[name] = new Messenger({name: name, data: data, methods: methods});
+        };
+        this.copy = function (obj) {
+            return JSON.parse(JSON.stringify(obj))
+        };
+        this.each=each;
     }
 
     window.sparrow = new Sparrow();

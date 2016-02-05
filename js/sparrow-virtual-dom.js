@@ -258,14 +258,10 @@
         var component = new type(), componentName = type.$componentName;
         spn._generatedByComponent = component;
         extend(component.prop, spn.prop || {});
-
         var node = spn._paintbrush = component.render();
         delete spn.children;
-
         parentComponent && initialTraceAndAdd(parentComponent, componentName, component);
-
         component._cacheNode = spn;
-
         return {node: node, component: component}
     }
 
@@ -332,22 +328,6 @@
         return this;
     };
 
-
-    var pubAndSub = {
-        addSub: function (name, fn, component) {
-            if (!this[name]) this[name] = [];
-            this[name].push(fn.bind(component))
-        },
-        publish: function (name, data, component) {
-            if (this[name]) {
-                var callbacks = this[name];
-                each(callbacks, function (cb) {
-                    cb(data, component)
-                })
-            }
-        }
-    };
-
     function Facade() {
 //            extend(this,obj)
         this.uuidFromProto = {
@@ -358,8 +338,8 @@
     Facade.prototype = {
         constructor: Facade,
         setState: function (newState) {
-            var oldNode = //这一步可能有问题
-                extend(this.state, newState);
+            var oldNode = this.render().subsequentPaint(this);//这一步可能有问题
+            extend(this.state, newState);
             var newNode = this.render().subsequentPaint(this);
             console.log(oldNode, newNode);
             var diffs = diffTwoNodes(newNode, oldNode);
@@ -372,25 +352,25 @@
             var diffs = diffTwoNodes(newNode, oldNode);
             nodeSync(this.$renderedDOM, diffs, this)
         },
-        pub: function (name, data) {
-            pubAndSub.publish(name, data, this)
-        },
-        sub: function (name, fn) {
-            pubAndSub.addSub(name, fn, this)
-        },
         call: function (mName, service, data) {
             var _this = this
                 , messenger = postOffice[mName]
-                , root = messenger.updateRoot;
-            var old = root.current();
-            each(messenger[service], function (cb) {
-                cb(data, _this)
+                , services = messenger.services
+                , components = messenger.connectedComponent;
+            var olds = [];
+            each(components, function (component, i) {
+                var old = component.current();
+                olds.push({
+                    c: component,
+                    o: old
+                });
             });
-            var n = root.current();
-            var date=new Date();
-            root.update(n, old);
-            var c=new Date();
-            console.log(c-date)
+            services[service](data,_this);
+            each(olds, function (old) {
+                var n=old.c.current();
+                old.c.update(n,old.o)
+            })
+
         }
     };
 
@@ -456,22 +436,23 @@
         return ele;
     }
 
-
     var postOffice = {};
 
     function Messenger(data) {
+        this.connectedComponent = [];
+        this.services = {};
         extend(this, data);
     }
 
     Messenger.prototype.wait = function (service, callback) {
         //this.allow
-        if (!this[service]) this[service] = [];
-        this[service].push(callback.bind(this));
+        var services=this.services;
+        services[service]=callback.bind(this);
         return this;
     };
 
-    Messenger.prototype.root = function (component) {
-        this.updateRoot = component;
+    Messenger.prototype.connect = function (component) {
+        this.connectedComponent.push(component);
     };
 
     function Sparrow() {
@@ -536,7 +517,7 @@
         this.copy = function (obj) {
             return JSON.parse(JSON.stringify(obj))
         };
-        this.each=each;
+        this.each = each;
     }
 
     window.sparrow = new Sparrow();

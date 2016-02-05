@@ -11,67 +11,50 @@
 </body>
 <script>
     var messenger=sparrow.defineMessenger({
+        name:'test',
         data:{
             date:'2016-12'
         }
     });
 
+    messenger.wait('dateChange',function(newDate,from){
+        this.data.date=newDate;
+    });
     var node=sparrow.createNode;
     var A = sparrow.createComponent({
         componentName: 'A',
         willMount:function(){
-            this.sub('delete',function(message,from){
-                console.log(message,from)
-            })
+            messenger.connect(this)
         },
         handleClick: function (event) {
-//                console.log(this,event)
-            this.setState({
-                bs:['Some body','ddddf','djjljlj']
-            });
-        },
-        defaultProp: function () {
-            return {age: '11'}
-        },
-        initialState: function () {
-            return {bs:['lu','dai']}
         },
         render: function () {
-            var bs=this.state.bs.map(function(b){
-                return node(B,{name:b})
-            });
-            var arr=bs.concat(node('button',{onClick:this.handleClick},'click to update'));
-            return node('div', {className:'a'}, arr)
-
+            return node('p',null,messenger.data.date)
         }
     });
 
     var B = sparrow.createComponent({
         componentName: 'B',
+        willMount:function(){
+          messenger.connect(this)
+        },
         handleClick: function (event) {
-            this.setState({location:'nantong'});
-            this.pub('delete','1');
-        },
-        initialState: function () {
-            return {location:'suzhou'}
         },
         render: function () {
-            return node('p', {onClick: this.handleClick,ref:'p'}, [this.prop.name,this.state.location])
+            return node('p',null,messenger.data.date)
         }
     });
 
-    var C = sparrow.createComponent({
-        componentName: 'C',
-        render: function () {
-            return node(A)
+    var C=sparrow.createComponent({
+        componentName:'C',
+        click:function(){
+          this.call('test','dateChange','2017')
+        },
+        render:function(){
+            return node('div',{onClick:this.click},[node(A),node(B)])
         }
     });
-    var a = node(C);
-    //    sparrow.with()
 
-    //    console.log(tree(a),tree(a2));
-    //    console.log(diffTwoNodes(a,a2));
-
-    sparrow.mount(a, document.getElementById('one'));
+    sparrow.mount(node(C), document.getElementById('one'));
 </script>
 </html>

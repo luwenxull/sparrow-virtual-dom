@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="27d21aa9-9c47-438e-a011-2b768650f50a" name="Default" comment="">
+      <change type="DELETED" beforePath="$PROJECT_DIR$/js/underscore.js" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/sparrow-virtual-dom.js" afterPath="$PROJECT_DIR$/js/sparrow-virtual-dom.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/index.html" afterPath="$PROJECT_DIR$/index.html" />
     </list>
     <ignored path="sparrow-virtual-dom.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -24,20 +25,20 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="index.html" pinned="false" current-in-tab="false">
+      <file leaf-file-name="index.html" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="37" column="36" selection-start-line="37" selection-start-column="36" selection-end-line="37" selection-end-column="36" />
+            <state vertical-scroll-proportion="0.12830189">
+              <caret line="4" column="23" selection-start-line="4" selection-start-column="23" selection-end-line="4" selection-end-column="23" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="sparrow-virtual-dom.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="sparrow-virtual-dom.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/js/sparrow-virtual-dom.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.81654674">
+            <state vertical-scroll-proportion="0.0">
               <caret line="542" column="11" selection-start-line="542" selection-start-column="11" selection-end-line="542" selection-end-column="11" />
               <folding>
                 <element signature="e#91#564#0" expanded="false" />
@@ -92,8 +93,8 @@
         <option value="$USER_HOME$/Desktop/huodong/css/viewPoint.css" />
         <option value="$USER_HOME$/Desktop/vritualDOM.html" />
         <option value="$USER_HOME$/Desktop/vd.html" />
-        <option value="$PROJECT_DIR$/index.html" />
         <option value="$PROJECT_DIR$/js/sparrow-virtual-dom.js" />
+        <option value="$PROJECT_DIR$/index.html" />
       </list>
     </option>
   </component>
@@ -133,8 +134,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
-      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -153,8 +152,24 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="sparrow-virtual-dom" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="sparrow-virtual-dom" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="js" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
+      <pane id="Scratches" />
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -285,6 +300,49 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/index.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/js/sparrow-virtual-dom.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="542" column="11" selection-start-line="542" selection-start-column="11" selection-end-line="542" selection-end-column="11" />
+          <folding>
+            <element signature="e#91#564#0" expanded="false" />
+            <element signature="e#601#744#0" expanded="false" />
+            <element signature="e#1176#1219#0" expanded="false" />
+            <element signature="e#1236#1452#0" expanded="false" />
+            <element signature="e#1495#1784#0" expanded="false" />
+            <element signature="e#1555#1635#0" expanded="false" />
+            <element signature="e#1840#1975#0" expanded="false" />
+            <element signature="e#2013#2351#0" expanded="false" />
+            <element signature="e#2393#2566#0" expanded="false" />
+            <element signature="e#2616#4969#0" expanded="false" />
+            <element signature="e#5042#5490#0" expanded="false" />
+            <element signature="e#5566#8188#0" expanded="false" />
+            <element signature="e#8301#8541#0" expanded="false" />
+            <element signature="e#8608#9049#0" expanded="false" />
+            <element signature="e#9117#9615#0" expanded="false" />
+            <element signature="e#9697#11581#0" expanded="false" />
+            <element signature="e#11605#12023#0" expanded="false" />
+            <element signature="e#12048#12147#0" expanded="false" />
+            <element signature="e#12851#12910#0" expanded="false" />
+            <element signature="e#12945#13001#0" expanded="false" />
+            <element signature="e#13592#14547#0" expanded="false" />
+            <element signature="e#14607#15492#0" expanded="false" />
+            <element signature="e#15550#15585#0" expanded="false" />
+            <element signature="e#15647#15793#0" expanded="false" />
+            <element signature="e#15848#15892#0" expanded="false" />
+            <element signature="e#15918#18252#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/index.html">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -985,16 +1043,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/js/underscore.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.9415808">
-          <caret line="1548" column="0" selection-start-line="1548" selection-start-column="0" selection-end-line="1548" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#43#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://D:/worksapce/zhicall-dragon/dragon-wechat/src/main/webapp/resources/js/consult/src/consult.js">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="-17.226805">
@@ -1079,17 +1127,9 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/index.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="37" column="36" selection-start-line="37" selection-start-column="36" selection-end-line="37" selection-end-column="36" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/js/sparrow-virtual-dom.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.81654674">
+        <state vertical-scroll-proportion="0.0">
           <caret line="542" column="11" selection-start-line="542" selection-start-column="11" selection-end-line="542" selection-end-column="11" />
           <folding>
             <element signature="e#91#564#0" expanded="false" />
@@ -1119,6 +1159,14 @@
             <element signature="e#15848#15892#0" expanded="false" />
             <element signature="e#15918#18252#0" expanded="false" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/index.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.12830189">
+          <caret line="4" column="23" selection-start-line="4" selection-start-column="23" selection-end-line="4" selection-end-column="23" />
+          <folding />
         </state>
       </provider>
     </entry>

@@ -77,7 +77,9 @@
 
     function traceChild(ele, trace) {
         var traceArr = trace.split('-').slice(1);
-        var child = parent = ele, index = 0;
+        var parent,child;
+        var index = 0;
+        child = parent = ele;
         while (index < traceArr.length) {
             parent = child;
             child = child.childNodes[traceArr[index]];

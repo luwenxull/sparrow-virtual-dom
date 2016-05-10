@@ -77,7 +77,7 @@
 
     function traceChild(ele, trace) {
         var traceArr = trace.split('-').slice(1);
-        var parent,child;
+        var parent, child;
         var index = 0;
         child = parent = ele;
         while (index < traceArr.length) {
@@ -343,7 +343,7 @@
             var oldNode = this.render().subsequentPaint(this);//这一步可能有问题
             extend(this.state, newState);
             var newNode = this.render().subsequentPaint(this);
-            console.log(oldNode, newNode);
+            //console.log(oldNode, newNode);
             var diffs = diffTwoNodes(newNode, oldNode);
             nodeSync(this.$renderedDOM, diffs, this)
         },
@@ -367,10 +367,10 @@
                     o: old
                 });
             });
-            services[service](data,_this);
+            services[service](data, _this);
             each(olds, function (old) {
-                var n=old.c.current();
-                old.c.update(n,old.o)
+                var n = old.c.current();
+                old.c.update(n, old.o)
             })
 
         }
@@ -401,6 +401,15 @@
                     each(val, function (v) {
                         ele.classList.add(v)
                     });
+                    break;
+                }
+                case name==='style':
+                {
+                    var style=prop.style;
+                    var style_keys=Object.keys(style);
+                    for(var si=0;si<style_keys.length;si++){
+                        ele.style[style_keys[si]]=style[style_keys[si]]
+                    }
                     break;
                 }
                 default:
@@ -448,8 +457,8 @@
 
     Messenger.prototype.wait = function (service, callback) {
         //this.allow
-        var services=this.services;
-        services[service]=callback.bind(this);
+        var services = this.services;
+        services[service] = callback.bind(this);
         return this;
     };
 
@@ -458,7 +467,7 @@
     };
 
     function Sparrow() {
-        this.version = '0.0.1';
+        this.version = '1.2';
         this.createComponent = function (describe) {
             var Component = function () {
                 extend(this, describe);
@@ -467,6 +476,8 @@
                 this.prop = this.defaultProp && this.defaultProp() || {};
 
                 this.willMount && this.willMount();
+
+
                 var ufp = this.uuidFromProto;
                 this.$traceId = this.componentName + '-' + ufp.uuid++;
                 this._traceChildrenComponent = Object.create(null);
@@ -475,9 +486,10 @@
                 //console.log(this);
                 delete this.initialState;
                 delete this.defaultProp;
-                delete this.willMount;
+                // delete this.willMount;
             };
-
+            
+            if(describe.didMount) Component.didMount=describe.didMount;
             var facade = new Facade();
             facade.constructor = Component;
             Component.prototype = facade;
@@ -486,9 +498,18 @@
 //                Component.$identity = 'Constructor of Component ' + describe.componentName;
             return Component;
         };
-        this.mount = function (spn, parent) {
-            var ele = tree(spn.firstPaint());
-            parent.appendChild(ele)
+        this.mount = function (spn, parent, fn) {
+            try {
+                var ele = tree(spn.firstPaint());
+                while (parent.firstChild) {
+                    parent.removeChild(parent.firstChild);
+                }
+                parent.appendChild(ele);
+            } catch (e) {
+                //
+            } finally {
+                fn && fn();
+            }
         };
         this.createNode = function (type, prop, children) {
             var node = new SparrowNode();

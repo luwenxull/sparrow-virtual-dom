@@ -47,6 +47,9 @@
 
     var C=sparrow.createComponent({
         componentName:'C',
+        didMount:function(){
+            alert(1)
+        },
         click:function(){
           this.call('test','dateChange','2017')
         },
@@ -56,5 +59,7 @@
     });
 
     sparrow.mount(node(C), document.getElementById('one'));
+
+    /**/
 </script>
 </html>

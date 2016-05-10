@@ -244,7 +244,10 @@
         return changes;
     }
 
-    function SparrowNode() {
+    function SparrowNode(type,prop,children) {
+        this.type=type;
+        this.prop=prop;
+        this.children=children;
     }
 
     function initialTraceAndAdd(parentComponent, componentName, component) {
@@ -433,6 +436,10 @@
             var component = spn._generatedByComponent;
             ele = tree(spn._paintbrush, component);
             component.$renderedDOM = ele;
+
+            if(type.didMount){
+                spn.type.didMount.call(component,ele,spn.prop)
+            }
         }
         if (isString(type)) {
             ele = document.createElement(type);
@@ -444,6 +451,7 @@
              ele.addEventListener('click', attr.onClick.bind(parentComponent))
              }*/
         }
+
         return ele;
     }
 
@@ -476,8 +484,7 @@
                 this.prop = this.defaultProp && this.defaultProp() || {};
 
                 this.willMount && this.willMount();
-
-
+                
                 var ufp = this.uuidFromProto;
                 this.$traceId = this.componentName + '-' + ufp.uuid++;
                 this._traceChildrenComponent = Object.create(null);
@@ -512,10 +519,6 @@
             }
         };
         this.createNode = function (type, prop, children) {
-            var node = new SparrowNode();
-            node.type = type;
-            node.prop = prop;
-
             if (children && !isArray(children)) {
                 children = [children]
             }
@@ -524,8 +527,8 @@
             each(children, function (child) {
                 if (child !== null && child !== undefined) filterChildren.push(child)
             });
-            node.children = filterChildren;
-            return node;
+
+            return new SparrowNode(type,prop,filterChildren);
         };
         this.defineMessenger = function (source) {
             var name = source.name;
